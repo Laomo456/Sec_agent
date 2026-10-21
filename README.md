@@ -1,4 +1,4 @@
-# AGG — Agent Gateway(安全智能体网关)
+# sec_agent — 专注渗透测试与多维度发掘
 
 自研的 AI 安全智能体平台:一个 OpenAI 兼容的 agent 网关(FastAPI + 自研循环),
 带 53 个热加载安全/逆向工具、22 个攻防技能、Dify 式可视化工作流引擎、RAG 知识库、
