@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+httpx
+pyyaml
+websockets
+mcp
+jsonschema
+# 文件上传接口（multipart 表单）需要
+python-multipart
+# jadx 桥接脚本（toolbox/mcp.json 的 jadx 源）以本 venv 的 python 起子进程，需要 fastmcp
+fastmcp
+# 约束求解（CTF 逆向/密码题脚本直接 import z3；run_cmd 的 python 锁本 venv）
+z3-solver

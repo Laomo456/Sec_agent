@@ -1,0 +1,56 @@
+name: ncat
+description: TCP/UDP 裸连接交互（横幅抓取、发包收包、本地监听收反弹）
+category: recon
+danger: intrusive
+timeout: 120
+bin: "../nmap/bin/Nmap/ncat.exe"   # 相对本工具目录（复用 nmap 自带发行包，SSL DLL 同目录）；不存在则退回 PATH 的 ncat
+requires: []
+keywords: [ncat, netcat, nc, tcp, udp, socket, 连接, 横幅, banner, 发包, 端口, 明文协议, 监听, 反弹, listen, ctf]
+search_text: >
+  连到目标端口收发原始数据：抓服务横幅(banner)、跟裸 TCP/UDP 服务对话
+  （CTF socket 题、redis/smtp/ftp 等明文协议手工交互、验证端口可连）。
+  mode=listen 时本地开端口等连入：接反弹 shell（data 可先发一条命令如 "id\n"）、
+  收目标外带数据/文件，一次一连接（无 -k 多路、无 -e 对连入端执行）。
+  已知是 HTTP 的场景用 http_probe / web_fetch，不要用本工具。
+example: {host: "10.10.14.5", port: 6379, data: "PING\r\n"}
+schema:
+  type: object
+  properties:
+    mode:
+      type: string
+      enum: [connect, listen]
+      description: connect=连到目标收发数据(默认) / listen=本地监听等连入(接反弹 shell/外带数据)
+    host:
+      type: string
+      description: 目标 IP 或主机名（不支持 URL，去掉 http://）；listen 模式 = 绑定地址，留空绑 0.0.0.0（接收外部反弹需要）
+    port:
+      type: integer
+      minimum: 1
+      maximum: 65535
+      description: 目标端口
+    data:
+      type: string
+      description: 连接后发送的文本（JSON 里写 \r\n 即真实回车换行）；留空 = 只收不发（纯 banner 抓取）
+    crlf:
+      type: boolean
+      description: 自动在 data 末尾补 \r\n（行式协议省得手写转义）
+    udp:
+      type: boolean
+      description: UDP 模式（默认 TCP）
+    ssl:
+      type: boolean
+      description: TLS 加密连接（默认明文）
+    hex:
+      type: boolean
+      description: 收到的响应以 hex dump 显示（二进制协议用）
+    wait:
+      type: integer
+      minimum: 1
+      maximum: 600
+      description: connect=连接超时秒数(默认 5)；listen=最长监听秒数(默认 30，到点没连入就结束)
+    idle:
+      type: integer
+      minimum: 1
+      maximum: 60
+      description: 收发空闲多久算结束，默认 6；listen 模式连入后同样适用
+  required: [port]

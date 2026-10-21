@@ -1,0 +1,27 @@
+name: fscan
+description: 内网综合扫描一把梭
+category: vuln
+danger: intrusive
+timeout: 900
+bin: "bin/fscan.exe"
+requires: []
+keywords: [fscan, 内网, intranet, 横向, 主机发现, 存活探测, 弱口令, 口令爆破, 域渗透, 常见漏洞, 一把梭, 红队]
+search_text: 国内红队标配内网扫描器：存活探测+端口+服务指纹+常见漏洞利用(MS17-010/Redis 未授权/Weblogic...)+弱口令爆破
+  一体。拿到入口点后摸内网拓扑、找横向移动路径用。对目标有侵入性，只打授权目标。
+example: {target: "192.168.1.0/24", skip_brute: true}
+schema:
+  type: object
+  properties:
+    target:
+      type: string
+      description: 目标 IP / CIDR 网段 / 主机名，如 192.168.1.0/24
+    ports:
+      type: string
+      description: '只扫这些端口，如 "22,80,445,3389"'
+    skip_brute:
+      type: boolean
+      description: 跳过弱口令爆破(-nobr)，只要拓扑信息时推荐开
+    skip_poc:
+      type: boolean
+      description: 跳过漏洞利用探测(-nopoc)，纯信息收集时推荐开
+  required: [target]

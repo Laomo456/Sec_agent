@@ -1,0 +1,81 @@
+name: web_brute
+description: Web 登录表单弱口令爆破（CSRF token / 成败标记判定 / 并发）
+category: web
+danger: intrusive
+timeout: 300
+requires: []
+keywords: [弱口令, 爆破, brute, brute force, login, 登录, password, 密码, 字典, 后台, admin, ctf, 渗透, fuzz]
+search_text: >
+  对 Web 登录表单做在线弱口令爆破：用户名×密码组合提交登录接口，支持
+  GET/POST、附加固定字段、CSRF token（每次先抓页面正则提取 token 再提交）、
+  按响应文本判定成败、并发与限速、命中即停。密码留空用内置常见弱口令表，
+  大字典传 @文件。系统服务弱口令（SSH/RDP/Redis/MySQL）用 fscan，
+  离线哈希破解用 hashcat —— 三个别混。
+example: {url: "http://target/login", user_field: "username", users: "admin", pass_field: "password", success_text: "退出登录"}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 登录提交地址（表单 action，不是登录页也行）
+    method:
+      type: string
+      enum: [POST, GET]
+      description: 表单提交方式，默认 POST
+    user_field:
+      type: string
+      description: 用户名的表单字段名（如 username / user / account）
+    users:
+      type: string
+      description: 用户名列表，逗号分隔（如 admin,root,test），或 @文件路径
+    pass_field:
+      type: string
+      description: 密码的表单字段名，默认 password
+    passwords:
+      type: string
+      description: 密码列表，逗号分隔或 @文件路径；留空 = 内置常见弱口令表
+    fields:
+      type: string
+      description: 附加固定表单字段，JSON 对象文本，如 {"submit":"登录","remember":"1"}
+    csrf_url:
+      type: string
+      description: 可选：每次提交前先 GET 这个页面抓 token（登录页地址）
+    csrf_regex:
+      type: string
+      description: 从页面提取 token 的正则，带一个捕获组，如 name="_token" value="([^"]+)"
+    csrf_field:
+      type: string
+      description: token 提交时的字段名，默认 csrf_token
+    success_text:
+      type: string
+      description: 响应包含此文本 = 破解成功（与 fail_text 二选一必填，都给时 success 优先）
+    fail_text:
+      type: string
+      description: 响应包含此文本 = 失败（如 "密码错误"）；不包含即视为成功
+    data_urlencode:
+      type: boolean
+      description: POST 体按表单 url 编码（默认）；关闭则拼 JSON 发送
+    threads:
+      type: integer
+      minimum: 1
+      maximum: 16
+      description: 并发数，默认 4（注意目标承压，授权范围内使用）
+    delay:
+      type: number
+      minimum: 0
+      maximum: 30
+      description: 每次请求后等待秒数，默认 0（防限速/防锁可设 0.5）
+    req_timeout:
+      type: integer
+      minimum: 1
+      maximum: 60
+      description: 单请求超时秒数，默认 8
+    stop_on_success:
+      type: boolean
+      description: 每个用户名命中一个密码就停（默认开）
+    max_tries:
+      type: integer
+      minimum: 1
+      maximum: 200000
+      description: 总尝试次数上限，默认 5000（防字典过大跑飞）
+  required: [url, user_field]

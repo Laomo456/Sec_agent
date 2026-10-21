@@ -1,0 +1,26 @@
+name: zap
+description: OWASP ZAP 主动漏扫(命令版BP)
+category: vuln
+danger: intrusive
+timeout: 900
+bin: "bin/zap/zap-2.17.0.jar"
+requires: []
+keywords: [zap, owasp zap, 主动扫描, active scan, 漏洞扫描, burp, 命令版bp, 安全扫描, 爬虫扫描, spider, 全站扫描]
+search_text: OWASP ZAP 无头快速扫描（spider+主动扫描一体，等价命令版 Burp Scanner）。
+  对整站做一轮爬取+已知漏洞主动探测，产出 Markdown 报告落 workspace。自带 JDK17，无需系统 Java。
+example: {url: "http://target/"}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 起始 URL，以 http(s):// 开头
+    recursive:
+      type: boolean
+      description: 从起始 URL 递归爬取整个站点（更全更慢）
+    heap_mb:
+      type: integer
+      minimum: 512
+      maximum: 2048
+      description: JVM 堆大小 MB（默认 1024）
+  required: [url]

@@ -1,0 +1,212 @@
+# wpbox：对接所选 All_WP HTTP 服务；保持旧 op/params 调用兼容。
+name: wpbox
+description: 资产树与笔记库的 HTTP 接口工具：资产采集、查询、改名、移动、级联删除；树/节点/笔记/Writeup 的列表、单条或批量保存、按 ID 替换删除、集合清空，以及 JSON 导出导入
+category: knowledge
+danger: unknown
+keywords:
+- 资产入库
+- 资产树
+- 资产面板
+- 资产收集
+- 记录资产
+- 资产管理
+- 删除资产
+- 清理资产
+- 搜索资产
+- 查资产
+- 写笔记
+- 笔记库
+- 报告
+- 渗透记录
+- 漏洞记录
+- 入库
+- 沉淀
+- ctf工具箱
+- allwp
+- wpbox
+- writeup
+- knowledge
+- 批量入库
+- 修改树名
+- 节点详情
+- 导出备份
+- 导入恢复
+- 清空集合
+timeout: 30
+origin: builtin
+op_danger:
+  health: readonly
+  trees: readonly
+  tree: readonly
+  find: readonly
+  asset: unknown
+  update: unknown
+  del: intrusive
+  note: unknown
+  list: readonly
+  save: unknown
+  replace: unknown
+  delete: intrusive
+  clear: intrusive
+  export: unknown
+  import: intrusive
+search_text: |
+  资产树/笔记/Writeup 管理。调用 {"op":"操作名","params":{...}}。所有入库都走 HTTP，不直接改 data/*.json；接口失败报错，不切换存储位置。服务地址优先 params.server，其次 WPBOX_URL，默认 http://127.0.0.1:8787。实际数据目录由该地址正在运行的服务决定，可能是 E:/All_WP 或项目 external/All_WP，不能凭源码位置判断。
+  【查询】
+  health(): GET /api/health，在线状态/四库数量。health 的 version 字段不能可靠判断管理接口是否已加载。
+  trees(keyword?): GET /api/overview，树名/ID/描述/节点数；旧服务 404 时只读回退 /api/trees + /api/nodes。
+  tree(tree,max_nodes?): 按树名显示层级（默认200/最多2000节点）；漏洞等级/状态。
+  find(tree?/keyword?/type?/severity?/status?/tag?,limit?): POST /api/query，至少一项条件；结果有完整路径及ID。需新版管理接口。
+  list(collection,id?,tree?,offset?,limit?): GET /api/:collection，返回完整记录（含正文/属性/检查清单），默认50/最多2000条，offset默认0。id客户端过滤取详情；tree只用于nodes，支持树名或树ID。分页/过滤在客户端进行。
+  【采集与合并】
+  asset(tree,name,path?,type?,node_id?,url?,ip?,port?,severity?,status?,tags?,attrs?,checklist?,content?,tree_description?): POST /api/collect。tree按名找/建；path父链用“名称:类型/名称:类型”，缺的层自动建。同树同父同名同类型合并：非空标量覆盖、tags并集、attrs按key合并、checklist按text追加（已有项done不变）。node_id映射nodeId，仅新建时生效；tree_description仅新树生效。
+  update(tree|id,name?,path?,type?,new_name?,new_type?,move_to?,url?,ip?,port?,severity?,status?,tags?,attrs?,checklist?,content?): POST /api/update。ID优先，否则树+父path+name+type定位；重名需消歧。改名、改类型、移动子树用new_name/new_type/move_to。省略id时name必填。字段仅非空覆盖，不能清空，不能更改已有检查项done。需新版接口。
+  del(tree|id,path?,name?,type?): POST /api/remove，选择器级联删除；只给tree删整棵树。不可恢复，需新版接口。
+  note(title,content,category?,type?,tags?,id?): POST /api/notes，Markdown笔记；同id整体覆盖而非局部合并。
+  【完整数据管理】
+  collection固定为trees/nodes/notes/writeups。
+  save(collection,data): POST /api/:collection；data为单条对象或非空对象数组。无id新建，有id整条覆盖，缺失字段不保留；批量只返回count。创建空树、改树名/描述、批量节点、笔记和Writeup均可用。需要保留旧字段时先list读取、改指定字段、再save/replace。原始节点须自己提供有效treeId/parentId，建议采集优先asset、移动优先update。
+  replace(collection,id,data): PUT /api/:collection/:id，整条替换（不存在时创建），不是PATCH。可清空字段、替换tags/attrs/checklist、设置已有检查项done、节点order或parentId。先list读取并保留其他字段；改parentId时须保持同树且无环，服务端通用接口不做这些结构校验。
+  delete(collection,id): DELETE /api/:collection/:id。新版服务对树/节点级联删除；旧进程可能没有级联，响应cascaded才表示服务报告的数量，不自动补删。
+  clear(collection): DELETE /api/:collection，清空指定集合，不可恢复。clear(trees)不连带清空nodes，会留下孤儿；不隐式删除其他集合。需要删整树优先del或delete。
+  export(path?): GET /api/export，保存四库JSON到会话files/wpbox/export-时间戳.json，或指定path；拒绝覆盖已存在文件。这是显式导出，不是断网备用写入。
+  import(path或data): POST /api/import，二选一。path读导出JSON；data={trees:[...],nodes:[...],notes:[...],writeups:[...]}，可只给部分集合，记录必须有id。按id整条覆盖，未提供/未命中的旧记录保留，不是全量清空恢复。上限32MB。
+  相对path落当前会话files（可用file_read查看），完整绝对路径也支持；接口失败不直接改资产文件。
+  类型：target/domain/ip/url/port/source/tech/vuln/cred/note；severity=info/low/medium/high/critical；status=new/confirmed/fixed/ignored；attrs=[{key,value}]，checklist=[{text,done}]；note.type=exp/knowledge/tool/trick/other。
+  管理接口404/405需重启实际提供地址的All_WP服务；不得假报成功、自动换地址或直接改JSON。面板刷新后看新数据。
+example:
+  op: asset
+  params:
+    tree: example.com 渗透项目
+    path: 主域名:domain
+    name: admin.example.com
+    type: domain
+    tags:
+    - 子域名
+    - 后台
+    attrs:
+    - key: Server
+      value: nginx/1.24
+schema:
+  type: object
+  required:
+  - op
+  properties:
+    op:
+      type: string
+      enum:
+      - health
+      - trees
+      - tree
+      - find
+      - asset
+      - update
+      - del
+      - note
+      - list
+      - save
+      - replace
+      - delete
+      - clear
+      - export
+      - import
+      description: 操作名，参数见用法；原有8种操作保持兼容，新增集合管理及导入导出
+    params:
+      type: object
+      properties:
+        server:
+          type: string
+          description: HTTP(S) 服务根地址；默认 http://127.0.0.1:8787
+        collection:
+          type: string
+          enum:
+          - trees
+          - nodes
+          - notes
+          - writeups
+        tree:
+          type: string
+          description: 树名；list(nodes)也接受树ID
+        name:
+          type: string
+          description: 资产名/定位名
+        id:
+          type: string
+          description: 记录ID
+        path:
+          type: string
+          description: asset/update/del为父链；export/import为JSON文件路径
+        node_id:
+          type: string
+          description: asset新建节点的自定义ID
+        type:
+          type: string
+          description: 节点类型；note操作为笔记类型
+        url:
+          type: string
+          description: 资产URL
+        ip:
+          type: string
+          description: 资产IP
+        severity:
+          type: string
+          description: info/low/medium/high/critical
+        status:
+          type: string
+          description: new/confirmed/fixed/ignored
+        content:
+          type: string
+          description: Markdown正文
+        tree_description:
+          type: string
+          description: 新树描述
+        new_name:
+          type: string
+          description: 节点新名
+        new_type:
+          type: string
+          description: 节点新类型
+        move_to:
+          type: string
+          description: 移动目标父链
+        keyword:
+          type: string
+          description: 搜索关键词
+        tag:
+          type: string
+          description: 单标签搜索
+        title:
+          type: string
+          description: 笔记标题
+        category:
+          type: string
+          description: 笔记分类
+        max_nodes:
+          description: 树输出数量，默认200，最大2000
+        limit:
+          description: 列表/搜索返回数量，list默认50最大2000
+        offset:
+          description: list起始位置，默认0；整数或整数字符串
+        port:
+          description: 端口，字符串或数字
+        tags:
+          description: 字符串数组或逗号分隔字符串
+        attrs:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              value: {}
+            required:
+            - key
+        checklist:
+          type: array
+          items:
+            description: 检查项对象{text,done}或文本；done接受布尔值或true/false字符串
+        data:
+          description: save:单条对象或对象数组；replace:完整对象；import:按集合名组织的对象，记录带id。实际JSON，不能把JSON字符串塞入此处
+      additionalProperties: true
+      description: 参数对象。新集合操作必填collection；save/replace必填data；delete/replace必填id；import只提供path或data一个。
+  additionalProperties: false

@@ -1,0 +1,117 @@
+# dnSpy .NET 逆向卡——直接操作本机已打开的 dnSpy 中加载的程序集。
+# 实现:run.py 纯 stdlib(urllib)直连 dnSpyEX 的 MCP 扩展 HTTP 端点(默认 5150),
+# 无状态免握手(实测 v1.5.1 直接 tools/call 即应答);不依赖 mcp_bridge/SDK。
+# 链路 = dnSpyEX(../external/dnspyEX,已内化进 agg)+ bin/Extensions/dnspy-mcp 扩展,
+# 打开 dnSpy 即自动起 :5150;关着则连不上,报错带启动提示。
+name: dnspy
+description: dnSpy .NET 逆向——直接操作已在 dnSpy 中加载的程序集(总览/搜索/反编译 C#/
+  交叉引用/改名去混淆/C# 语句补丁方法体),无需本地文件路径。Unity Mono 游戏改
+  Assembly-CSharp 用这张卡;IL2CPP 游戏先用 Il2CppDumper 出 dll 再拖进 dnSpy
+category: reverse
+danger: unknown    # 混合:31 个只读 + 5 个写(见 op_danger)
+keywords: [dnSpy, dnspy, .NET, dotnet, C#, 游戏, Unity, Mono, IL2CPP, IL, 逆向,
+  反编译, 程序集, assembly, dll, Assembly-CSharp, 改名, rename, 补丁, patch, CTF, 分析]
+timeout: 300
+origin: builtin
+op_danger:
+  # 常用·只读
+  assembly_overview: readonly
+  list_loaded_assemblies: readonly
+  search_types: readonly
+  search_methods: readonly
+  search_strings: readonly
+  search_constants: readonly
+  grep: readonly
+  decompile_type: readonly
+  decompile_method: readonly
+  get_type_members: readonly
+  get_type_hierarchy: readonly
+  get_fields: readonly
+  get_method_signatures: readonly
+  get_enum_values: readonly
+  get_xrefs_to: readonly
+  get_callees: readonly
+  # 写操作(改的是 dnSpy 内存里加载的程序集)
+  rename_class: unknown
+  rename_method: unknown
+  rename_namespace: unknown
+  update_method_body: unknown
+  refresh_u_i: unknown
+  # 不常用·只读
+  get_method_il: readonly
+  get_il_opcodes_formatted: readonly
+  get_method_body: readonly
+  get_attributes: readonly
+  get_method_attributes: readonly
+  get_properties: readonly
+  assembly_list_namespaces: readonly
+  assembly_list_types: readonly
+  assembly_get_references: readonly
+  get_global_namespaces: readonly
+  get_resources: readonly
+  get_resource_data: readonly
+  get_metadata: readonly
+  decompile_assembly: readonly
+  get_selected_node: readonly
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。目标 = 本机已打开的 dnSpy(dnSpyEX + MCP 扩展,
+  默认 http://127.0.0.1:5150,打开 dnSpy 就有)——直接操作 dnSpy 里当前加载的程序集,
+  无需本地文件路径。Unity Mono 游戏主战场是 Assembly-CSharp.dll;IL2CPP 游戏先
+  Il2CppDumper 出 dll 再拖进 dnSpy。三层分工:.NET/C# 游戏逻辑用本卡,Java 层用
+  jadx 卡,native .so 算法用 ida 卡。
+  【查·常用只读】主线:总览 → 搜 → 反编译
+  - assembly_overview(assemblyName?): 程序集总览:模块/版本/入口点/类型数/引用——分析第一步
+  - list_loaded_assemblies(): dnSpy 当前已加载的二进制清单
+  - search_types(pattern, namespaceFilter?, assembly?): 按名搜类型(子串匹配,
+    正则元字符按字面处理——v1.5.1 实测 'regex:' 前缀不起正则作用)
+  - search_methods(pattern, typeFullName?, assembly?): 按名搜方法(同上,子串匹配)
+  - search_strings(pattern, minLength?, assembly?): 搜字符串字面量(找提示语/密钥/URL)
+  - search_constants(pattern, namespaceFilter?, assembly?): 搜常量字段与枚举值(找魔数)
+  - grep(pattern, scope?, assembly?): 跨类型/方法/字符串 grep
+  - decompile_type(typeFullName): 反编译整个类型为 C#(全部成员)
+  - decompile_method(methodFullnameOrToken): 反编译单个方法,格式 'Namespace.Class::Method'
+  - get_type_members(typeFullName, memberType?, nameFilter?): 列类型成员(可按字段/属性/方法过滤)
+  - get_type_hierarchy(typeFullName): 继承链与实现接口
+  - get_fields(typeFullName, nameFilter?): 字段详情:类型/访问性/静态/const/默认值
+  - get_method_signatures(methodFullname): 方法签名详情:参数/返回/属性/flags
+  - get_enum_values(enumTypeFullName): 枚举全部命名值
+  - get_xrefs_to(memberFullname, assembly?): 查谁引用了该方法/字段
+  - get_callees(methodFullname): 查该方法调用了谁
+  【改·写操作】改的是 dnSpy 内存里加载的程序集;rename 默认 dryRun=true 先预览
+  - rename_class(assembly, namespace, oldClassName, newClassName, dryRun?)
+  - rename_method(assembly, namespace, className, methodName, newName, partialMatch?, dryRun?)
+  - rename_namespace(assembly, oldNamespace, newNamespace, dryRun?)
+  - update_method_body(methodFullnameOrToken, methodBody, dryRun?): C# 语句补丁方法体
+  - refresh_u_i(): 改动后刷新 dnSpy 文档标签生效
+  【不常用·底层辅助】
+  - get_method_il(methodFullname) / get_il_opcodes_formatted(methodFullnameOrToken):
+    IL 指令(C# 层存疑时对照)
+  - get_method_body(methodFullname): 方法体原始 IL 字节(特征码匹配用)
+  - get_attributes(targetType, targetIdentifier, attributeFilter?) /
+    get_method_attributes(methodFullnameOrToken, attributeFilter?): 列特性
+  - get_properties(typeFullName, nameFilter?): 属性 getter/setter 签名
+  - assembly_list_namespaces() / assembly_list_types(pattern?, count?) / assembly_get_references()
+  - get_global_namespaces() / get_metadata(assembly?) / decompile_assembly()(大程序集慢,慎用)
+  - get_resources() / get_resource_data(resourceName, maxLength?) /
+    get_selected_node()(GUI 当前选中节点,人在看屏时协作)
+example: {op: assembly_overview, params: {}}
+schema:
+  type: object
+  required: [op]
+  properties:
+    op:
+      type: string
+      enum: [assembly_overview, list_loaded_assemblies, search_types, search_methods,
+        search_strings, search_constants, grep, decompile_type, decompile_method,
+        get_type_members, get_type_hierarchy, get_fields, get_method_signatures,
+        get_enum_values, get_xrefs_to, get_callees, rename_class, rename_method,
+        rename_namespace, update_method_body, refresh_u_i, get_method_il,
+        get_il_opcodes_formatted, get_method_body, get_attributes, get_method_attributes,
+        get_properties, assembly_list_namespaces, assembly_list_types,
+        assembly_get_references, get_global_namespaces, get_resources,
+        get_resource_data, get_metadata, decompile_assembly, get_selected_node]
+      description: 操作名(常用只读在前),各操作参数见 usage 分组表
+    params:
+      type: object
+      description: '各 op 的参数,如 assembly_overview {} · search_types {pattern} · decompile_method {methodFullnameOrToken: "Ns.Class::Method"} · rename_class {assembly, namespace, oldClassName, newClassName, dryRun?}'
+  additionalProperties: false

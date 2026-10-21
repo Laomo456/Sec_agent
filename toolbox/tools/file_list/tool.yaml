@@ -1,0 +1,22 @@
+name: file_list
+description: 列出目录内容
+category: basic
+danger: readonly
+timeout: 60
+requires: []
+keywords: [列目录, 目录, ls, dir, list, 浏览, 文件夹]
+search_text: 列出目录下的文件与子目录（名称/大小/修改时间）。浏览工作区、找文件用。recursive=true 递归子目录；pattern 给 glob 通配（如 *.py、**/*.php）做查找。
+example: {path: "", recursive: false}
+schema:
+  type: object
+  properties:
+    path:
+      type: string
+      description: 目录路径（相对=会话工作区，空串=工作区根）
+    recursive:
+      type: boolean
+      description: 是否递归子目录（默认 false）
+    pattern:
+      type: string
+      description: 可选 glob 通配（如 *.py / **/*.php）；配 recursive 等价 rglob
+  required: [path]

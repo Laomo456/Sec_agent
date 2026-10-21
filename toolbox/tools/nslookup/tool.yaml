@@ -1,0 +1,43 @@
+name: nslookup
+description: DNS 记录查询（A/AAAA/CNAME/MX/NS/TXT/SOA/PTR/SRV/CAA/ANY），可指定 DNS 服务器、UDP/TCP
+category: recon
+danger: readonly
+timeout: 45
+requires: []
+keywords: [nslookup, dig, dns, 域名解析, 解析, dns记录, mx, txt, spf, dkim, cname, 别名, ns记录, ptr, 反查, 反解, soa, srv, caa, 指定dns, 公共dns, 权威, 递归]
+search_text: >
+  查单个域名的 DNS 记录：A/AAAA(IP)、CNAME(别名链)、MX(邮件服务器,找邮件网关入口)、
+  TXT(SPF/DKIM/域名归属验证)、NS(权威 NS,看域名托管在哪家)、SOA(主序号)、
+  PTR(IP 反查主机名,直接给 IP 即自动反解)、SRV/CAA。可指定 DNS 服务器
+  (server=8.8.8.8 / 223.5.5.5)对比不同解析商的结果差异、验证解析是否已生效。
+  分流：批量子域名收集用 subfinder/oneforall，不要拿本工具枚举；
+  只想知道"这个域名能不能访问/是什么服务"用 http_probe / web_fetch；
+  IP 属地与 ASN 归属不归本工具。默认自动取系统 DNS(取不到用国内公共 DNS)。
+example: {domain: "example.com", type: "MX"}
+schema:
+  type: object
+  properties:
+    domain:
+      type: string
+      description: 要查的域名（如 www.example.com）；直接给 IP（如 8.8.8.8）时自动转 PTR 反查
+    type:
+      type: string
+      enum: [A, AAAA, CNAME, MX, NS, TXT, SOA, PTR, SRV, CAA, ANY]
+      description: 记录类型，默认 A；domain 是 IP 时默认 PTR
+    server:
+      type: string
+      description: 指定 DNS 服务器（IP 或主机名，如 8.8.8.8 / 223.5.5.5）；默认自动取系统 DNS
+    port:
+      type: integer
+      minimum: 1
+      maximum: 65535
+      description: DNS 端口，默认 53
+    tcp:
+      type: boolean
+      description: 强制 TCP 查询（默认 UDP；UDP 响应被截断时自动改 TCP 重查）
+    timeout:
+      type: integer
+      minimum: 1
+      maximum: 10
+      description: 每个 DNS 服务器的等待秒数，默认 3
+  required: [domain]

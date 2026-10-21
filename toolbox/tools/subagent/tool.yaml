@@ -1,0 +1,51 @@
+name: subagent
+description: 异步提交多个后台子智能体，完成后通知并读取工作区报告
+category: agent
+danger: intrusive
+timeout: 30
+requires: []
+keywords: [subagent, agent, 智能体, 子智能体, 多智能体, 委派, 分工, 并行, 协作, 工作流]
+search_text: >
+  将独立子任务分派给 1–8 个子智能体，支持 parallel 并行与 sequential 顺序执行；
+  提交后立即返回 batch_id、各 agent_id 和 manifest_path，不等待任务完成、不返回报告正文。
+  网关负责后台执行和异步通知；无需轮询、等待或调度。收到完成通知后用 file_read 读取
+  subagents/manifest.json，再读取条目的 report_path；不能把提交成功当作任务完成。
+  每项可选 system 角色指令、profile 模型档案、toolset_id 工具集、max_iterations、timeout_s。
+  context 是传给所有子任务的背景，子任务不会自动读取主对话记忆。
+  每项状态和报告持久化到当前工作区 files/subagents/。完成报告落盘后才发送通知。
+  子智能体共享当前会话文件，独立上下文与日志；工具权限为父任务与所选工具集的交集，
+  不允许子智能体继续委派。并行任务应避免修改同一文件。顺序模式会把之前任务的结果传给后续任务。
+  某项失败不抹掉其他结果；超时、停止、迭代耗尽会明确标记，不能当作完成。
+  每项默认 1800 秒（30 分钟）、40 轮（不超过父任务上限）；concurrency 默认 3、最大 4。
+  排队不占单项执行时间；批次默认无总超时，需要时显式传 timeout_s（含排队，最多 14400 秒）。
+  toolset_id 必须为已配置的真实 ID，不得猜测 recon 等名称；省略即可继承父任务权限。
+example:
+  tasks:
+    - {name: 分析, task: 分析当前会话文件，列出主要问题, toolset_id: readonly}
+    - {name: 复核, task: 独立复核当前会话文件，给出证据, toolset_id: readonly}
+  mode: parallel
+schema:
+  type: object
+  additionalProperties: false
+  required: [tasks]
+  properties:
+    tasks:
+      type: array
+      minItems: 1
+      maxItems: 8
+      items:
+        type: object
+        additionalProperties: false
+        required: [task]
+        properties:
+          name: {type: string, minLength: 1, maxLength: 80}
+          task: {type: string, minLength: 1, maxLength: 20000}
+          system: {type: string, maxLength: 12000}
+          profile: {type: string, maxLength: 64}
+          toolset_id: {type: string, maxLength: 64}
+          max_iterations: {type: integer, minimum: 1, maximum: 40}
+          timeout_s: {type: number, minimum: 1, maximum: 3600}
+    mode: {type: string, enum: [parallel, sequential], default: parallel}
+    context: {type: string, maxLength: 30000}
+    concurrency: {type: integer, minimum: 1, maximum: 4, default: 3}
+    timeout_s: {type: number, minimum: 1, maximum: 14400}

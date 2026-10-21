@@ -1,0 +1,32 @@
+name: mitm_proxy
+description: 脚本化抓包代理(mitmdump)
+category: web
+danger: readonly
+timeout: 400
+requires: []
+keywords: [mitmproxy, mitmdump, 代理, 抓包, 拦截, 流量, proxy, capture, 中间人, 浏览器调试]
+search_text: mitmproxy 的无头模式：起一个本地代理抓流量（或反向代理目标站），
+  定时收工后输出请求摘要（方法/URL/状态码）+ flows 文件路径。等价 Burp 的 Intercept/HTTP history，
+  配合浏览器手动测试后让 agent 分析流量用。venv pip 装。
+example: {mode: "reverse", reverse_target: "http://target/", duration: 60}
+schema:
+  type: object
+  properties:
+    mode:
+      type: string
+      enum: [regular, reverse]
+      description: regular=本地正向代理(浏览器配 127.0.0.1:port) / reverse=反向代理目标站
+    listen_port:
+      type: integer
+      minimum: 1024
+      maximum: 65535
+      description: 本地监听端口（默认 8888）
+    reverse_target:
+      type: string
+      description: reverse 模式的目标 URL（必填）
+    duration:
+      type: integer
+      minimum: 5
+      maximum: 300
+      description: 抓多少秒后自动收工（默认 30）
+  required: [mode]

@@ -1,0 +1,100 @@
+name: upload_test
+description: 文件上传漏洞检测与绕过
+category: web
+danger: intrusive        # manual/fuzz 都发上传流量（写目标）
+timeout: 360
+requires: []
+keywords: [upload, 文件上传, 上传, 上传绕过, 上传漏洞, upload bypass, webshell, 木马, 一句话,
+  phtml, phps, pht, htaccess, user.ini, mime 绕过, 文件类型绕过, 双写, "%00", 解析漏洞,
+  二次渲染, pathinfo, 图片马, 竞争, 黑名单, 白名单, ctf]
+search_text: >
+  文件上传漏洞测试（manual 手动单发 / fuzz 矩阵+链式剧本）。manual=全维度可控单发：
+  文件名/MIME/上传方式(multipart|raw)/字段/额外表单/自定义头，响应+路径候选回显，
+  可选 check_url 上传后顺带 GET 验证——怪链（覆盖已有文件/zip 解压/登录态分步）用它手玩。
+  fuzz=单发变体矩阵（扩展名族 ext：大小写/双写/末尾空格点/::$DATA/备用后缀、MIME 伪装、
+  图片魔头图片马、双扩展、路径穿越/%00 截断、请求结构 filename*/双 filename）加链式剧本
+  （.htaccess AddType/AddHandler/SetHandler、.user.ini auto_prepend、nginx pathinfo、
+  IIS 目录解析、二次渲染存活），内置验证闭环：上传→落点发现（响应回显>Location>常见目录，
+  可 upload_dir 指定）→GET 查无害 marker 是否执行；失败响应按签名归并防刷屏；命中可执行
+  可 stop_first 提前停。载荷恒为无害 echo marker，不预置真 webshell——要传真马用 manual 自己
+  带内容。分流：找上传入口用 dirsearch/web_fetch；SSTI 用 fenjing；确认可执行后发命令用
+  web_fetch/ncat；上传后文件路径找不到时用 dirsearch 跑目录或给 upload_dir。
+example: {op: "fuzz", url: "http://target/upload.php", level: "fast"}
+schema:
+  type: object
+  properties:
+    op:
+      type: string
+      enum: [manual, fuzz]
+      description: manual=全维度可控单发 / fuzz=变体矩阵+链式剧本(自带验证闭环)
+    url:
+      type: string
+      description: 上传接口地址，http(s):// 开头（两个 op 都必填）
+    field:
+      type: string
+      description: 文件字段名。manual 默认 file；fuzz 不给则先 GET 解析表单里的 input[type=file]，兜底 file
+    filename:
+      type: string
+      description: manual 必填(multipart 时)：上传文件名，可带技巧（Shell.PHP / shell.php. / %00 等）
+    content:
+      type: string
+      description: manual 必填：文件内容（文本，与 content_hex 二选一）
+    content_hex:
+      type: string
+      description: 二进制内容的 hex（图片马等，与 content 二选一）
+    content_type:
+      type: string
+      description: MIME 强制覆盖（默认按文件扩展名猜，兜底 application/octet-stream）
+    method:
+      type: string
+      enum: [POST, PUT]
+      description: HTTP 方法，默认 POST
+    body_mode:
+      type: string
+      enum: [multipart, raw]
+      description: multipart=常规表单上传；raw=content 直接当请求体（JSON/base64 接口、PUT 裸字节），默认 multipart
+    extra_fields:
+      type: object
+      additionalProperties: {type: string}
+      description: 其他表单字段（如 token/CSRF）
+    headers:
+      type: object
+      additionalProperties: {type: string}
+      description: 自定义请求头
+    check_url:
+      type: string
+      description: manual 可选：上传后 GET 该 URL，报告执行/存储/不存在
+    lang:
+      type: string
+      enum: [php, asp, jsp, aspx]
+      description: fuzz 的 marker 载荷语言，默认 php
+    level:
+      type: string
+      enum: [fast, full]
+      description: fuzz 量级：fast≈36 变体+4 链 / full≈59 变体+7 链（php 计数，其他语言备用后缀略少），默认 fast
+    families:
+      type: string
+      description: fuzz 族筛选，逗号分隔：ext,mime,content,parser,filename,request,chain 或 all（默认）
+    delay_ms:
+      type: integer
+      minimum: 0
+      maximum: 5000
+      description: fuzz 请求间隔毫秒，默认 150
+    upload_dir:
+      type: string
+      description: 已知落点目录或 URL 前缀（如 /uploads/ 或 http://t/static/），优先于常见目录表
+    stop_first:
+      type: boolean
+      description: fuzz 验证到可执行后立即停止（省请求），默认 false
+    cookies:
+      type: string
+      description: 请求 Cookie，如 "PHPSESSID=abc"
+    ua:
+      type: string
+      description: 自定义 User-Agent（默认浏览器 UA）
+    timeout_s:
+      type: integer
+      minimum: 1
+      maximum: 60
+      description: 单请求超时秒数，默认 10
+  required: [op, url]

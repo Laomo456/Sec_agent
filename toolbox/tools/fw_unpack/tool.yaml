@@ -1,0 +1,47 @@
+# 固件解包卡——binwalk 定位的固件文件系统提取(TP-LINK 等 SquashFS 厂商 LZMA 变体)。
+# 实现:run.py 纯 stdlib(lzma/zlib),把 _verification/fw_extract.py 的实证布局泛化:
+#   载荷 [props][dict4][LZMA1 流] + 压缩标志不可靠 → 先试 LZMA 再 deflate 再裸;
+#   dir inode f1 块基址自适配(0=偏移直通 / 3927 类魔数→8192+off / 常规→f1*8192+off);
+#   root_inode 块字段自适配(命中元数据块压缩偏移→按压缩偏移,否则按块号)。
+name: fw_unpack
+description: 固件解包——路由器/IoT 固件里的 SquashFS 文件系统探测/列目录树/全量提取,
+  支持 TP-LINK 等厂商 LZMA 变体(binwalk/sasquatch 解不开的那类)。CTF 固件逆向第一步。
+category: reverse
+danger: readonly   # 纯本地解析,三个 op 都无副作用且幂等(逐 op 见 op_danger)
+timeout: 300
+origin: builtin
+keywords: [固件, firmware, 路由器, TP-LINK, IoT, squashfs, sqfs, hsqs, lzma,
+  解包, 提取, 文件系统, rootfs, binwalk, 固件分析, ctf]
+op_danger:
+  probe: readonly
+  tree: readonly
+  extract: readonly
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。输入 = 固件/镜像文件路径(相对=会话工作区)。
+  适用:路由器/IoT 固件 .bin/.img 里的 SquashFS 文件系统,含 binwalk/sasquatch 啃不动的
+  TP-LINK 厂商 LZMA 变体(载荷 [props][dict][LZMA1流] 且压缩标志不可靠)。
+  与 upx/packer_detect/pe_unpack 分流:那三张是 PE 壳;本卡是固件文件系统。
+  【三步主线】
+  - probe(file): 全息体检——SquashFS 偏移/版本/压缩/块大小/inode 数/厂商变体信号/
+    顶层目录/文件统计/可疑路径(backdoor 等关键词)。拿到固件先跑这个
+  - tree(file): 完整目录树(文件+大小,400 行截断;要全量清单用 extract 的 listing.txt)
+  - extract(file, output?): 全量提取到目录(默认 会话工作区/<文件名>.sqfs/),
+    附 listing.txt 全量清单 + 可疑文件列表 + /etc/shadow 摘要(有则给哈希)
+  【实战要点】
+  - 可疑样本(如名为 backdoor 的 ELF)可能被 Windows Defender 按名没收——属系统行为,
+    信息已进 listing.txt;深度分析建议基于 listing 定位后内存态/改名处理
+  - 提取出的 ARM/MIPS ELF 用 ida 卡继续;UPX 壳的先用 upx 卡脱
+  - 不支持 TRX/cFE 等外壳固件(只认文件内嵌的 sqfs 魔数);加密固件会报"未找到魔数"
+example: {op: probe, params: {file: "bin1.bin"}}
+schema:
+  type: object
+  required: [op]
+  properties:
+    op:
+      type: string
+      enum: [probe, tree, extract]
+      description: probe=全息体检(第一步) / tree=完整目录树 / extract=全量提取落盘
+    params:
+      type: object
+      description: '各 op 参数:probe/tree {file} · extract {file, output?}(输出目录,默认 会话工作区/<文件名>.sqfs/)'
+  additionalProperties: false

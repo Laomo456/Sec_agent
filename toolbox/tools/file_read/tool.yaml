@@ -1,0 +1,25 @@
+name: file_read
+description: 读取文本文件内容（分页）
+category: basic
+danger: readonly
+timeout: 60
+requires: []
+keywords: [读文件, 文件, read, file, 查看, cat, 打开, 源码]
+search_text: 读取本地文本文件（代码、配置、日志、笔记）。大文件用 offset/limit 分页（流式读，不整体载入内存）；给 pattern 则内建 grep 只回匹配行（正则）。单行超 2000 字符自动截断；二进制文件会提示改用 pe_unpack/hexdump。
+example: {path: "notes/todo.txt", offset: 0, limit: 100}
+schema:
+  type: object
+  properties:
+    path:
+      type: string
+      description: 文件路径（相对=会话工作区）
+    offset:
+      type: integer
+      description: 起始行号（从 0 计）
+    limit:
+      type: integer
+      description: 读取行数 / grep 匹配上限（默认 200，上限 2000）
+    pattern:
+      type: string
+      description: 可选。给出则进入 grep 模式，只返回匹配该正则的行（非法正则退化为子串）
+  required: [path]

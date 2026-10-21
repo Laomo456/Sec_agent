@@ -1,0 +1,24 @@
+name: hakoriginfinder
+description: 找 CDN/WAF 背后真实源站
+category: recon
+danger: readonly
+timeout: 300
+bin: "bin/hakoriginfinder.exe"
+requires: []
+keywords: [cdn, 真实ip, 源站, origin, hakoriginfinder, 绕过waf, cloudflare, cdn检测, 回源, 直连]
+search_text: 给定目标站与候选 IP/域名列表，逐个请求比对响应相似度（levenshtein），
+  找出 CDN/WAF 背后的真实源站。绕过 WAF 的釜底抽薪路线：拿到源站 IP 后直连。
+example: {target: "https://www.target.com/", candidates: "1.2.3.4,5.6.7.8"}
+schema:
+  type: object
+  properties:
+    target:
+      type: string
+      description: 目标站 URL（在 CDN 后面的那个）
+    candidates:
+      type: string
+      description: 候选源站 IP/域名，逗号或换行分隔（来自历史 DNS/证书/资产测绘）
+    ports:
+      type: string
+      description: '候选 IP 尝试的端口，逗号分隔（默认 "80,443"）'
+  required: [target, candidates]

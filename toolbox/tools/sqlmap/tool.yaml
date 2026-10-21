@@ -1,0 +1,70 @@
+name: sqlmap
+description: SQL 注入检测与利用
+category: web
+danger: intrusive
+timeout: 900
+requires: []                    # 用自带 bin/ 或 venv console script 时留空，run.py 自检存在性
+keywords: [sqlmap, sql注入, sql injection, 注入, inject, 数据库, 布尔盲注, 时间盲注, union, dump, 拖库, 枚举]
+search_text: 自动检测并利用 SQL 注入：枚举数据库/表/列、导出数据，或对含参数 URL/表单做注入探测。始终非交互(--batch)。已知注入点深挖或疑似注入点验证用。
+example: {url: "http://target/page.php?id=1", action: dbs}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 目标 URL，含注入参数，以 http(s):// 开头
+    action:
+      type: string
+      enum: [detect, dbs, tables, columns, dump, dump_all]
+      description: detect=仅检测注入点(默认) / dbs=枚举数据库 / tables=枚举表(需db) / columns=枚举列(需db+table) / dump=导出数据(需db+table) / dump_all=导出全部
+    data:
+      type: string
+      description: 'POST 请求体，如 "id=1&name=admin"（提供则按 POST 注入处理）'
+    cookie:
+      type: string
+      description: 请求 Cookie，如 "PHPSESSID=abc"
+    method:
+      type: string
+      enum: [GET, POST, PUT]
+      description: HTTP 方法（默认自动判断）
+    level:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: 探测深度 1-5（越高越全越慢）
+    risk:
+      type: integer
+      minimum: 1
+      maximum: 3
+      description: 风险等级 1-3（>1 含破坏性 payload）
+    dbms:
+      type: string
+      description: 指定数据库类型，如 mysql / postgresql / mssql
+    technique:
+      type: string
+      pattern: "^[BEUSTQ]{1,6}$"
+      description: 注入手法组合 B布尔 E报错 U联合 S堆叠 T时间盲注 Q内联，如 "BT"
+    tamper:
+      type: string
+      pattern: "^[a-zA-Z0-9_,]+$"
+      description: 'WAF 绕过混淆脚本，逗号组合。常用: space2comment(空格→/**/) / charencode /
+        between(比较符→BETWEEN) / randomcase(大小写混淆) / equaltolike(=→LIKE) /
+        space2plus / apostrophemask(UTF-8全角引号)，如 "space2comment,randomcase"'
+    random_agent:
+      type: boolean
+      description: 随机浏览器 UA（默认 UA 带 sqlmap 签名会被 WAF 秒拦，绕过必开）
+    threads:
+      type: integer
+      minimum: 1
+      maximum: 10
+      description: 并发线程数
+    proxy:
+      type: string
+      description: '代理，如 "http://127.0.0.1:8080"'
+    db:
+      type: string
+      description: 数据库名（tables/columns/dump 用）
+    table:
+      type: string
+      description: 表名（columns/dump 用）
+  required: [url]

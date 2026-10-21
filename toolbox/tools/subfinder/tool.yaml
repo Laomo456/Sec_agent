@@ -1,0 +1,19 @@
+name: subfinder
+description: 子域名枚举
+category: recon
+danger: readonly
+timeout: 600
+requires: [subfinder]
+keywords: [子域名, subdomain, subfinder, 枚举, 域名, 资产发现, enum, 收集]
+search_text: 被动收集目标的子域名，聚合证书透明日志、搜索引擎等多个公开来源。信息收集阶段扩大攻击面用。
+example: {domain: "example.com", all_sources: false}
+schema:
+  type: object
+  properties:
+    domain:
+      type: string
+      description: 目标域名，如 example.com
+    all_sources:
+      type: boolean
+      description: 启用 -all 穷尽所有来源（较慢，部分来源需 API key）
+  required: [domain]

@@ -1,0 +1,26 @@
+name: run_cmd
+description: 执行白名单内的系统命令（联网抓取的完全体）
+category: system
+danger: intrusive
+timeout: 300
+requires: []
+# bin_map: 命令名 → 绝对路径（优先于 PATH）。python/pip 锁定 gateway venv，
+# 与依赖安装目标一致（requests 等库装哪，脚本就在哪跑）。
+bin_map:
+  python: "../gateway/.venv/Scripts/python.exe"
+  pip: "../gateway/.venv/Scripts/pip.exe"
+keywords: [命令, 执行, bash, shell, cmd, command, 运行, 终端, terminal, 跑, 运行脚本, python, curl]
+search_text: 执行系统命令（白名单内），工作目录为会话工作区——python script.py 直接跑相对路径脚本。联网抓取的完全体：web_fetch 搞不定的站点用它。中文搜索首选 cn.bing.com/search?q=（裸 curl 即可，最稳）；百度 /s 反爬激进（"网络不给力"/安全验证假页），UA+cookie 两步法也常被拦，失败一次就换 bing。Google/DuckDuckGo 国内网络不可达，别试。大结果页加 -o serp.html 存盘再用 findstr 或 python 提取标题（如 findstr /C:"<h2" serp.html），避免输出截断。powershell 在白名单内但注意它能执行任意命令，等于放开白名单。
+example: {command: "python", args: ["-c", "print(6*7)"]}
+schema:
+  type: object
+  properties:
+    command:
+      type: string
+      enum: [python, pip, curl, ping, nslookup, ipconfig, whoami, echo, where, findstr, powershell]
+      description: 命令名（仅白名单；powershell 可跑任意命令，属有意放开）
+    args:
+      type: array
+      items: {type: string}
+      description: 参数列表（不经 shell 展开，管道/重定向符会被当普通参数）
+  required: [command]

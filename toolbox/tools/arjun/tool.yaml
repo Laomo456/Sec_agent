@@ -1,0 +1,21 @@
+name: arjun
+description: 隐藏参数发现
+category: web
+danger: intrusive
+timeout: 300
+requires: []
+keywords: [arjun, 隐藏参数, 参数发现, 参数爆破, hidden parameter, GET参数, POST参数, 注入点, param, parameter]
+search_text: 探测 URL 上的隐藏 GET/POST 参数（反射点/注入点入口发现）。
+  找 SQL 注入/XSS/SSRF 前先确认有哪些可控参数名。venv pip 装的 arjun，经 Scripts/arjun.exe 执行。
+example: {url: "http://target/page.php"}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 目标 URL，以 http(s):// 开头
+    method:
+      type: string
+      enum: [GET, POST, XML, JSON, HEADERS]
+      description: 探测的参数位置(可选，默认 GET)
+  required: [url]

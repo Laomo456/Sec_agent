@@ -1,0 +1,24 @@
+name: pe_unpack
+description: Real-file PE unpacking stages with UPX, bounded x64dbg OEP discovery, artifacts and explicit verification levels
+category: reverse
+danger: intrusive
+timeout: 150
+requires: []
+keywords: [unpack, PE, OEP, EP, dump, workflow, file, 解壳]
+search_text: Accept any local file path. inspect snapshots the input; plan validates model advice; upx attempts static recovery and bounded header repair; ep, oep, validate, dump use the idle architecture-matching debugger. verify checks PE structure and optionally runs a bounded smoke test. Unsupported inputs and unresolved imports return needs_manual, never fake success. release cancels and stops only this run's debuggee. Never overwrite the original.
+example: {action: inspect, file: 'F:/samples/target.exe'}
+schema:
+  type: object
+  additionalProperties: false
+  properties:
+    action:
+      type: string
+      enum: [inspect, plan, upx, ep, oep, validate, dump, skip, verify, report, release]
+    file: {type: string, minLength: 1}
+    run_id: {type: string, pattern: '^[a-f0-9]{16}$'}
+    plan: {type: string}
+    report: {type: string}
+    runtime_check: {type: boolean}
+    mode: {type: string, enum: [auto, dynamic]}
+    timeout_seconds: {type: number, minimum: 5, maximum: 60}
+  required: [action]

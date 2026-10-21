@@ -1,0 +1,52 @@
+# POP 链挖掘(popchain)——外部项目 D:\RAG\popchain 的工具卡。
+# 解析/枚举/链库查询在系统 py 下跑(torch 推理也在系统 py),gateway venv 只做垫片。
+name: popchain
+description: PHP POP 链挖掘——把 PHP 源码解析成 gadget 属性图,枚举 __destruct/__wakeup 起点的触发链并给 serialize payload 骨架;超长链入 SQLite 持久化随时查;NN 模型(结构特征,零词表)给方法打 gadget 分定展开优先级;动态派发点(->$name()/call_user_func/new $var/顶层 unserialize)单列出来交给你判定
+category: web
+danger: unknown    # 混合:全部只读分析,但 chains 默认写 SQLite 链库(见 op_danger)
+keywords: [pop链, 反序列化, unserialize, php, gadget, 魔术方法, __destruct, __wakeup, __toString, __invoke, __call, __get, serialize, ctf, web, 漏洞挖掘, 链挖掘]
+timeout: 300
+origin: builtin
+op_danger:
+  analyze: readonly
+  chains: readonly
+  dynamic: readonly
+  search: readonly
+  score: readonly
+  status: readonly
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。PHP 反序列化 POP 链挖掘三部曲:
+  ① analyze 建图看类/边/约束 → ② chains 枚举链拿 payload 骨架(自动入库)
+  → ③ score 用模型给方法打分定优先级。链上值(cmd/文件名)要自己填,
+  模型只管"哪些方法值得进链",不猜实参。
+  【常用·只读】
+  - chains(path, depth?=12, max?=2000, top?=30, no_save?): 枚举 __destruct/__wakeup
+    起点的链。返回 path(类::方法 -(属性/方式)> …)==> SINK + serialize payload 骨架
+    (链上属性嵌套对象,其余属性空串占位,值自己填)。n_sink_controlled=真正可利用
+    (sink 实参引用 $this->属性);status=dynamic 的链是符号层解不出的动态派发。
+    默认写入链库(超长链持久化),no_save:true 跳过
+  - analyze(path...): 建图概览——类/方法/属性/类型约束(prop_types)/动态点。
+    path 可以是文件或目录(递归 *.php),多文件合并一张图
+  - score(path, top?=25): 模型打分排行(GNN,只看结构特征与类名/方法名无关)。
+    配合 chains:高分管方法的邻域优先展开
+  - dynamic(path): 动态派发点清单(->$name()、call_user_func、new $var、
+    Cls::$m()、顶层 unserialize)——这些符号层放弃,需要你结合数据流/上下文判定
+  - search(q?, sink?, status?, min_len?, max_len?, limit?): 查链库(入库的超长链
+    按 sink/入口/关键字随时查)
+  - status(): 模型/链库自检(训练指标、参数量、库内图数/链数)
+  注意:PHP 文件路径要在本机可读(session 工作区绝对路径或 F:/ 盘路径)。
+  识别不了的场景:加密/加壳的 PHP、eval 拼出来的类、运行时动态定义的类。
+example: {op: chains, params: {path: "F:/samples/useless.php", depth: 12, top: 10}}
+schema:
+  type: object
+  required: [op]
+  properties:
+    op:
+      type: string
+      enum: [chains, analyze, score, dynamic, search, status]
+      description: 操作名,各操作参数见 usage 分组表
+    params:
+      type: object
+      description: 'chains {path, depth?, max?, top?, no_save?}; analyze {paths 或 path};
+        score {path, top?}; dynamic {path}; search {q?, sink?, status?, min_len?, limit?}; status {}'
+  additionalProperties: false

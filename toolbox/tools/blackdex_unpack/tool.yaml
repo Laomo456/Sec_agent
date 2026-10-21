@@ -1,0 +1,76 @@
+# BlackDex 脱壳卡——模拟器/设备侧 app 脱壳(免 root 免 frida),bin 已安置。
+# BlackDex 本体是 APK(https://github.com/CodingGay/BlackDex/releases),装进模拟器
+# 图形化点选目标 app 即 dump。adb 复用 android_unpack 卡的 bin(缺则给指引)。
+name: blackdex_unpack
+description: BlackDex 脱壳——免 root 免 frida 的设备侧脱壳 app:装进模拟器点选目标
+  即 dump dex 到 /sdcard/BlackDex;本卡负责安装/启动/等产物/拉回工作区。
+  适用 frida 闪退、反 frida 检测绕不过时的替代路线。
+category: reverse
+danger: intrusive   # 与模拟器/设备交互(逐 op 见 op_danger)
+timeout: 300
+origin: builtin
+keywords: [blackdex, 脱壳, 免root, 无frida, dump, dex, 模拟器, mumu, adb,
+  加固, 逆向, frida闪退, 替代路线]
+op_danger:
+  env_check: readonly
+  install: intrusive
+  launch: intrusive
+  wait: readonly
+  pull: readonly
+  shell: intrusive
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。适用:加固 app 脱壳,且 frida 路线走不通
+  (闪退/反检测)或目标对 frida 敏感——BlackDex 在设备侧运行,不注入不 hook。
+  前置:bin/BlackDex.apk(releases 下载)+ adb(自动复用 android_unpack 卡的 bin/adb.exe)。
+  【主线】
+  - env_check(): 体检 apk/adb/设备连接,缺什么给什么指引;任何时候卡住先跑这个
+  - install(): adb 装 BlackDex 本体进模拟器(目标 app 请用 android_unpack 卡 install)
+  - launch(pkg?): 启动 BlackDex(包名自动发现,也可显式给)
+  - wait(timeout?): 轮询 /sdcard/BlackDex/ 等新增或变化的非空 DEX，连续两次轮询稳定——点选目标 app 是
+    模拟器 UI 里的手动步骤(MuMu 窗口操作),选完这里就能等到产物
+  - pull(output?): 把 dump 出的 dex 全量拉回工作区 files/blackdex/<时间戳>/,列清单
+  【辅助】
+  - shell(cmd): 设备侧命令(查 pm list packages / ls /sdcard/BlackDex 等)
+  【实战要点】
+  - 与 android_unpack 卡互补:frida 路线(dexdump)优先,闪退换本卡;
+    dump 出的 dex 交 jadx 卡反编译
+  - BlackDex 只对部分壳有效(梆梆/爱加密/360 免费档等),VMP 档认输——壳档位
+    判据先 rag 搜 combat《加固壳总档》
+  - 模拟器启动/目标 app 安装不归本卡:android_unpack 的 emu/install op 管这些
+example: {op: env_check, params: {}}
+schema:
+  type: object
+  required:
+  - op
+  properties:
+    op:
+      type: string
+      enum:
+      - env_check
+      - install
+      - launch
+      - wait
+      - pull
+      - shell
+      description: 6 个 op,主线 env_check→install→launch→(UI 点选)→wait→pull
+    params:
+      type: object
+      description: 各 op 参数:install {} · launch {pkg?} · wait {timeout?=120} · pull {output?}
+        · shell {cmd} · env_check {}
+      properties:
+        pkg:
+          type: string
+          description: 'launch: BlackDex 包名；wait: 可选目标应用包名过滤'
+        timeout:
+          type:
+          - integer
+          - string
+          description: 'wait: 等待秒数，1..240，默认 120'
+        output:
+          type: string
+          description: 'pull: 输出目录，必须为空或不存在'
+        cmd:
+          type: string
+          description: 'shell: Android shell 命令'
+      additionalProperties: false
+  additionalProperties: false

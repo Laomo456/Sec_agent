@@ -1,0 +1,27 @@
+name: nuclei
+description: 模板化漏洞扫描(CVE/Poc)
+category: vuln
+danger: intrusive
+timeout: 900
+bin: "bin/nuclei.exe"
+requires: []
+keywords: [nuclei, 漏洞扫描, 漏洞, 弱点, CVE, poc, exp, 验证, 检测, vulnerability, scanner, RCE, SQL注入, 未授权]
+search_text: 基于 YAML 模板的快速漏洞扫描器（数万模板：CVE、默认口令、未授权访问、信息泄露、NBV）。
+  对单个 url 快速过一遍已知漏洞；severity/tags 可过滤模板范围。
+example: {url: "http://target/", severity: "high,critical"}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 目标 URL，以 http(s):// 开头
+    severity:
+      type: string
+      description: '按严重度过滤模板，逗号分隔: info,low,medium,high,critical'
+    tags:
+      type: string
+      description: '按标签过滤模板，逗号分隔，如 "cve,rce,oob"'
+    templates_dir:
+      type: string
+      description: 模板目录(可选)，默认用内置 bin/templates 或官方默认路径
+  required: [url]

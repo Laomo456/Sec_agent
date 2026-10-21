@@ -1,0 +1,25 @@
+name: file_edit
+description: 精确修改文件中的一段文本（原文替换式编辑）
+category: basic
+danger: intrusive
+timeout: 60
+requires: []
+keywords: [修改, 编辑, edit, 改动, 替换, patch, 更新, 改文件, 修复]
+search_text: 在文件中做精确修改：给出原文片段(old_text)与新文本(new_text)，old_text 必须与文件内容逐字符一致（含缩进与空白）且唯一。多处匹配要加长片段或 replace_all。改大文件只需给改动片段，无需重写整个文件。编辑前建议先 file_read。
+example: {path: "main.py", old_text: "print(1)", new_text: "print(2)"}
+schema:
+  type: object
+  properties:
+    path:
+      type: string
+      description: 文件路径（相对=会话工作区）
+    old_text:
+      type: string
+      description: 要替换的原文片段，须与文件逐字符一致且唯一
+    new_text:
+      type: string
+      description: 替换后的文本
+    replace_all:
+      type: boolean
+      description: 替换全部匹配（默认要求唯一匹配）
+  required: [path, old_text, new_text]

@@ -1,0 +1,27 @@
+name: interactsh
+description: 带外(OOB)回连检测
+category: misc
+danger: readonly
+timeout: 120
+bin: "bin/interactsh-client.exe"
+requires: []
+keywords: [interactsh, oob, 带外, out-of-band, 盲打, 回连, dnslog, 盲注验证, blind, ssrf 验证, xxe, 回调]
+search_text: 带外回连检测：生成一次性回调 URL（子域名），嵌入 payload 后任何 DNS/HTTP/SMTP
+  出网交互都会被记录。盲 RCE/SSRF/XXE/SQL 盲注的最终验证手段。start→拿URL→嵌payload→poll→看命中→stop。
+example: {action: "start"}
+schema:
+  type: object
+  properties:
+    action:
+      type: string
+      enum: [start, poll, stop]
+      description: start=启动客户端拿回调URL / poll=查看已有交互 / stop=停止
+    count:
+      type: integer
+      minimum: 1
+      maximum: 10
+      description: start 时生成几个回调 URL（默认 1）
+    match:
+      type: string
+      description: poll 时只看匹配此子串的交互
+  required: [action]

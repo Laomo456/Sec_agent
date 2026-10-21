@@ -1,0 +1,33 @@
+name: dalfox
+description: XSS 检测与 PoC 生成
+category: web
+danger: intrusive
+timeout: 900
+bin: "bin/dalfox.exe"
+requires: []
+keywords: [xss, dalfox, 跨站脚本, 跨站, XSS检测, dom xss, 反射型, 存储型, poc, payload, 注入点]
+search_text: Go 写的 XSS 扫描器：参数挖掘+静态/动态分析+PoC 生成，支持盲打回调(--blind)、
+  DOM XSS、WAF 规避(--waf-evasion 自动降速)。验证 XSS 注入点、生成可复现 PoC 用。
+example: {url: "http://target/search?q=test", waf_evasion: true}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 目标 URL（含待测参数），以 http(s):// 开头
+    param:
+      type: string
+      description: 只测指定参数名(可选，默认全部)
+    data:
+      type: string
+      description: POST body（form 或 JSON），提供则按 POST 测
+    blind:
+      type: string
+      description: 盲打回调 URL（配合 interactsh 的地址用）
+    waf_evasion:
+      type: boolean
+      description: WAF 规避模式：自动降为单线程+3s 延迟
+    follow_redirects:
+      type: boolean
+      description: 跟随 3xx 跳转
+  required: [url]

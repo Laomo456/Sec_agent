@@ -1,0 +1,7 @@
+# Install into gateway venv: python -m pip install -r requirements-mobile.txt
+# Server binary must exactly match frida; tools/dexdump use their own version numbers.
+frida==17.23.3
+frida-tools==14.11.0
+frida-dexdump==2.0.1
+requests==2.33.1
+pyelftools==0.33

@@ -1,0 +1,22 @@
+name: ysoserial
+description: Java 反序列化 PoC 生成器
+category: misc
+danger: readonly
+timeout: 120
+bin: "bin/ysoserial-all.jar"
+requires: []
+keywords: [ysoserial, 反序列化, deserialization, java, gadget, CommonsCollections, shiro, weblogic, fastjson, rce, payload 生成]
+search_text: 生成 Java 反序列化利用 payload（CommonsCollections1-7 / URLDNS / JRMPClient 等 30+ gadget 链）。
+  输出 base64 + 原始 .bin 文件路径。URLDNS 无依赖链适合探测，其余用于利用。纯本地生成，不发请求。
+example: {payload: "URLDNS", command: "http://xxx.oast.pro"}
+schema:
+  type: object
+  properties:
+    payload:
+      type: string
+      pattern: "^[A-Za-z0-9]+$"
+      description: gadget 链名，如 URLDNS / CommonsCollections6 / CommonsBeanutils1 / JRMPClient
+    command:
+      type: string
+      description: payload 参数。URLDNS/JRMPClient 填 URL；执行类链填命令，如 "calc" 或 "touch /tmp/pwn"
+  required: [payload]

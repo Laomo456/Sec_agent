@@ -1,0 +1,52 @@
+name: hashcat
+description: 哈希离线爆破（双引擎：真 hashcat GPU / 内置多进程 Python 引擎）
+category: crypto
+danger: readonly        # 纯本地计算，不发任何网络请求
+timeout: 300
+requires: []
+keywords: [hashcat, hash, 爆破, 破解, crack, 字典, mask, 掩码, ntlm, md5, shadow, 凭据, ctf, 渗透]
+search_text: >
+  离线爆破哈希拿明文：字典攻击（内置常见弱口令表或 @自定义字典文件）、
+  掩码爆破（?d?d?d?d 六位数字锁这类）、变体规则（尾缀123/!/大写等）。
+  双引擎：bin/ 里有真 hashcat（GPU、全算法 bcrypt/office/zip 慢哈希）就用它，
+  没有就用内置多进程 Python 引擎（md5/sha1/sha256/sha512/ntlm 快哈希，CPU 也够快）。
+  op=identify 按格式猜哈希类型，op=status 看当前引擎。
+  在线登录表单爆破用 web_brute；算哈希用 hash_calc —— 分工别混。
+example: {op: "crack", hashes: "e10adc3949ba59abbe56e057f20f883e"}
+schema:
+  type: object
+  properties:
+    op:
+      type: string
+      enum: [crack, identify, status]
+      description: crack=爆破拿明文 / identify=按格式猜哈希类型 / status=看引擎能力（真hashcat还是内置）
+    hashes:
+      type: string
+      description: 目标哈希，逗号分隔多个，或 @文件路径（一行一个，支持 hash:salt 里的 salt 自动忽略）
+    algo:
+      type: string
+      enum: [auto, md5, sha1, sha256, sha512, ntlm]
+      description: 哈希算法，auto=按长度猜（32位hex可能是 md5 也可能是 ntlm，猜错就显式指定）
+    attack:
+      type: string
+      enum: [dict, mask]
+      description: dict=字典攻击(默认) / mask=掩码爆破
+    dict:
+      type: string
+      description: 字典：@文件路径（如 @rockyou.txt）或 builtin=内置弱口令表（默认）
+    mask:
+      type: string
+      description: hashcat 掩码语法，如 ?d?d?d?d?d?d（6位数字）；?d数字 ?l小写 ?u大写 ?s符号 ?a全部
+    rules:
+      type: boolean
+      description: 字典攻击时对每个词生成常见变体（尾缀 123/!/大写/leet 等，×~10 展开）
+    workers:
+      type: integer
+      minimum: 1
+      maximum: 16
+      description: 并发进程数，默认 CPU 核数-1（上限 8）
+    max_candidates:
+      type: integer
+      minimum: 1000
+      maximum: 50000000
+      description: mask 模式候选上限（默认 500 万，超出直接报错防跑飞）

@@ -1,0 +1,220 @@
+/* ═══ 设计基线：Aurora Glass ═══
+   深空底 + 缓慢流动的极光背景 / 玻璃面板 / 紫→青渐变强调 / 等宽数据字体。
+   所有组件只用这里的 token，换肤改这一处即可。 */
+:root {
+  color-scheme: dark;
+  --bg: #06070c;
+  --bg-2: #0b0d16;
+  --glass: rgba(16, 18, 30, 0.58);
+  --glass-2: rgba(24, 27, 44, 0.62);
+  --glass-strong: rgba(14, 16, 26, 0.86);
+  --glass-hover: rgba(255, 255, 255, 0.045);
+  --line: rgba(255, 255, 255, 0.07);
+  --line-2: rgba(255, 255, 255, 0.13);
+  --text: #eceef7;
+  --text-2: #a3a7bd;
+  --text-3: #62667e;
+  --accent: #8f7cff;
+  --accent-2: #2dd4bf;
+  --accent-3: #38bdf8;
+  --accent-grad: linear-gradient(135deg, #8f7cff 0%, #5b8cff 50%, #2dd4bf 100%);
+  --accent-dim: rgba(143, 124, 255, 0.14);
+  --accent-glow: 0 0 0 1px rgba(143, 124, 255, 0.35), 0 8px 30px rgba(143, 124, 255, 0.25);
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --err: #f87171;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  --blur: blur(18px) saturate(140%);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sans: "Inter", "HarmonyOS Sans SC", "Segoe UI Variable", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  height: 100dvh;
+  /* iOS Safari 软键盘弹出时 dvh 不变,由 App.vue 按 visualViewport 差值设 --kb 收缩整壳;
+     安卓 layout viewport 会同步缩小、差值为 0,天然不生效 */
+  height: calc(100dvh - var(--kb, 0px));
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+button { font-family: inherit; }
+::selection { background: rgba(143, 124, 255, 0.4); }
+
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.09); border-radius: 4px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.18); }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* ── 极光背景（App.vue 挂 .aurora 容器） ── */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 700px at 110% -10%, rgba(91, 140, 255, 0.10), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(45, 212, 191, 0.07), transparent 60%),
+    var(--bg);
+}
+.aurora .blob {
+  position: absolute;
+  width: 46vmax;
+  height: 46vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.32;
+  mix-blend-mode: screen;
+  animation: drift 26s var(--ease) infinite alternate;
+}
+.aurora .b1 { background: #6d4dff; top: -18vmax; left: -8vmax; }
+.aurora .b2 { background: #0ea5e9; bottom: -22vmax; right: -10vmax; animation-duration: 32s; animation-delay: -8s; }
+.aurora .b3 { background: #14b8a6; top: 30%; left: 45%; width: 30vmax; height: 30vmax; opacity: 0.16; animation-duration: 38s; animation-delay: -15s; }
+.aurora .grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at 50% 40%, #000 20%, transparent 75%);
+}
+.aurora .noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(8vmax, 6vmax) scale(1.12) rotate(20deg); }
+  100% { transform: translate(-6vmax, 10vmax) scale(0.94) rotate(-10deg); }
+}
+
+/* ── 通用原子 ── */
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+.grad-text {
+  background: var(--accent-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  background: rgba(255, 255, 255, 0.025);
+  white-space: nowrap;
+}
+.pill .dot { width: 6px; height: 6px; border-radius: 3px; background: var(--text-3); }
+.pill.ok .dot { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.pill.run .dot { background: var(--accent); animation: pulse 1.4s infinite; }
+.pill.warn .dot { background: var(--warn); animation: pulse 1.4s infinite; }
+.pill.err .dot { background: var(--err); }
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(143, 124, 255, 0.6); }
+  70% { box-shadow: 0 0 0 7px rgba(143, 124, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(143, 124, 255, 0); }
+}
+@keyframes blink { 50% { opacity: 0.35; } }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 流光文字：思考中 / 执行中 */
+.shimmer-text {
+  background: linear-gradient(90deg, var(--text-3) 0%, var(--text) 50%, var(--text-3) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 2.2s linear infinite;
+}
+
+/* 视图切换过渡（App.vue <Transition name="view">） */
+.view-enter-active, .view-leave-active { transition: opacity 0.25s var(--ease), transform 0.25s var(--ease); }
+.view-enter-from { opacity: 0; transform: translateY(6px) scale(0.995); }
+.view-leave-to { opacity: 0; }
+
+/* ── markdown ── */
+.md { overflow-wrap: anywhere; }
+.md :not(pre) > code {
+  background: rgba(143, 124, 255, 0.12);
+  color: #c9c0ff;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-family: var(--mono);
+  font-size: 0.87em;
+}
+.md pre {
+  background: rgba(5, 6, 12, 0.7);
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  border-radius: 12px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.md p { margin: 0.5em 0; }
+.md h1, .md h2, .md h3 { margin: 0.8em 0 0.4em; line-height: 1.35; }
+.md h1 { font-size: 1.35em; }
+.md h2 { font-size: 1.2em; }
+.md h3 { font-size: 1.05em; }
+.md table { border-collapse: collapse; margin: 0.6em 0; font-size: 0.92em; }
+.md th, .md td { border: 1px solid var(--line-2); padding: 6px 12px; }
+.md th { background: rgba(255, 255, 255, 0.035); }
+.md a { color: var(--accent-3); text-decoration: none; }
+.md a:hover { text-decoration: underline; }
+.md ul, .md ol { padding-left: 1.4em; margin: 0.4em 0; }
+.md blockquote {
+  margin: 0.6em 0;
+  padding: 2px 12px;
+  border-left: 3px solid var(--accent);
+  color: var(--text-2);
+}
+
+/* 尊重系统"减少动态效果"设置 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .n-drawer.n-drawer--right { width: 100% !important; max-width: 100vw; }
+  .n-input textarea, .n-input input { font-size: 16px !important; }
+  .md table, .md pre { display: block; max-width: 100%; overflow-x: auto; }
+}

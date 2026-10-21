@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "jadx": {
+      "command": "../gateway/.venv/Scripts/python.exe",
+      "args": [
+        "../external/jadx-mcp-server/jadx_mcp_server.py"
+      ],
+      "env": {
+        "PYTHONPATH": "../external/jadx-mcp-server"
+      }
+    },
+    "x64dbg": {
+      "command": "../external/node.exe",
+      "args": [
+        "../external/x64dbg-mcp-server/dist/index.js"
+      ]
+    },
+    "ctf2": {
+      "url": "https://ctf2.dasctf.com/api/ai/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer ${CTF2_TOKEN}"
+      }
+    }
+  }
+}

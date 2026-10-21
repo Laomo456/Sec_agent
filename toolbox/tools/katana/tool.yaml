@@ -1,0 +1,29 @@
+name: katana
+description: 网站爬虫(端点/JS 收集)
+category: web
+danger: readonly
+timeout: 600
+bin: "bin/katana.exe"
+requires: []
+keywords: [katana, 爬虫, crawl, spider, 端点, 链接, JS, javascript, api发现, endpoint, 收集, 信息收集]
+search_text: ProjectDiscovery 的标准爬虫(可选 headless)：收集页面里的全部端点、JS 文件、API 路径。
+  找隐藏接口、JS 里泄露的密钥/路由、attack surface 地图的第一步。
+example: {url: "http://target/", depth: 2, js_crawl: true}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 起始 URL，以 http(s):// 开头
+    depth:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: 爬取深度，默认 2
+    js_crawl:
+      type: boolean
+      description: 解析 JS 文件内部链接(-jc，较慢但全)
+    known_files:
+      type: boolean
+      description: 顺带抓 robots.txt / sitemap.xml 等已知文件
+  required: [url]

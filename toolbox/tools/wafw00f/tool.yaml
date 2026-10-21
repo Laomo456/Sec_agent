@@ -1,0 +1,19 @@
+name: wafw00f
+description: Web 防火墙(WAF)指纹识别
+category: web
+danger: readonly
+timeout: 300
+requires: []
+keywords: [waf, 防火墙, 指纹, wafw00f, 识别, 检测, 防护, 云盾, cloudflare]
+search_text: 检测目标网站是否部署 WAF（Cloudflare、云盾、ModSecurity 等）及具体类型。Web 攻击前判断目标防护情况用。
+example: {url: "http://target/", findall: true}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 目标 URL，以 http(s):// 开头
+    findall:
+      type: boolean
+      description: 检出所有匹配的 WAF 而非停在第一个
+  required: [url]

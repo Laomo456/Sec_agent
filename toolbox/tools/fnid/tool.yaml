@@ -1,0 +1,51 @@
+# 函数指纹识别（fnid）——外部项目 D:\RAG\fnid 的工具卡。
+# 模型推理在系统 py（装了 torch/CUDA），gateway venv 只做垫片转发（tools/fnid/run.py）。
+name: fnid
+description: 函数指纹识别——给一段反汇编文本（从 IDA 复制），返回最像的库函数 top-K + 置信度。词表 167 类（Go 运行时 + C/CRT），词表外弃权返回 OTHER
+category: re
+danger: unknown    # 混合：识别只读；语料/训练是写操作（见 op_danger）
+keywords: [指纹, 识别, fnid, 函数识别, 库函数, strcmp, memcpy, memset, 符号恢复, 逆向, identify, fingerprint, face, 库函数识别]
+timeout: 600
+origin: builtin
+op_danger:
+  identify: readonly
+  predict: readonly
+  normalize: readonly
+  vocab: readonly
+  status: readonly
+  extract_go: unknown
+  extract_c: unknown
+  train: unknown
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。只认词表内 167 类（Go 运行时 + C/CRT）；
+  词表外函数返回 OTHER/UNIDENTIFIED（弃权不瞎猜）。识别结论是强参考——
+  结合伪代码特征交叉验证后再 rename 标注。
+  【识别·常用】
+  - identify(disasm, top?): 反汇编文本（IDA 复制，Intel 语法，带不带 段:地址 前缀均可；
+    var_/arg_ 自动换算帧偏移，jnz/retn 自动映射成语料助记符）→ top-K 身份 + 置信度 + token 预览。
+    函数需 ≥5 条指令
+  - predict(tokens, top?): 已归一化 token 序列 → 批量 top-K。tokens 为 JSONL 字符串
+    （每行 {"tokens":[...]}，可带 symbol 验证）或数组
+  - normalize(disasm): 只归一化不出结果（调试/检查 token 用，不加载模型，秒回）
+  - vocab(): 词表全部类别（go/crt 分组）——先看目标函数在不在识别范围
+  - status(): 环境/模型/词表自检（torch、CUDA、模型文件、mtime）
+  【语料·写】分钟级；整体重写 data\ 语料，bins\ 里会混入你丢进去的二进制
+  - extract_go(): 重扫 bins\ 重建 Go 语料
+  - extract_c(): 重扫 bins_c\ 重建 C 语料
+  【训练·写】3-4 分钟；重写 models\。扩词表后 cnn 与 logreg 要先后各训一次（同词表数字才可比）
+  - train(model?: cnn|logreg): 重训并保存，predict 立即生效
+  注意：Go 语料来自 go tool objdump（大写助记符 + LOC 跳转）；从 IDA 粘贴按
+  C 语料约定归一化（小写 Intel + IMM 跳转），识别 Go 运行时函数可能降级。
+example: {op: identify, params: {disasm: (从 IDA 复制的函数反汇编文本), top: 5}}
+schema:
+  type: object
+  required: [op]
+  properties:
+    op:
+      type: string
+      enum: [identify, predict, normalize, vocab, status, extract_go, extract_c, train]
+      description: 操作名，各操作参数见 usage 分组表
+    params:
+      type: object
+      description: '各操作参数：identify/normalize {disasm}, predict {tokens, top?}, train {model?}'
+  additionalProperties: false

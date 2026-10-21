@@ -1,0 +1,23 @@
+name: hash_calc
+description: 计算字符串或文件的哈希值
+category: crypto
+danger: readonly
+timeout: 60
+requires: []
+keywords: [hash, 哈希, md5, sha1, sha256, sha512, 摘要, digest]
+search_text: 对文本或文件计算常见哈希(md5/sha1/sha256/sha512)。CTF 中验证文件完整性、哈希识别题可用。
+example: {algo: md5, text: "hello"}
+schema:
+  type: object
+  properties:
+    algo:
+      type: string
+      enum: [md5, sha1, sha256, sha512]
+      description: 哈希算法
+    text:
+      type: string
+      description: 要哈希的文本(与 file 二选一)
+    file:
+      type: string
+      description: 要哈希的文件路径(与 text 二选一)
+  required: [algo]

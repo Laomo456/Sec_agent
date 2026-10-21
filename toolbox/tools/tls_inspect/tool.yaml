@@ -1,0 +1,29 @@
+name: tls_inspect
+description: TLS 证书与协议检查
+category: recon
+danger: readonly
+timeout: 60
+requires: []
+keywords: [tls, ssl, certificate, 证书, https, cipher, 加密套件, expiry, 域名]
+search_text: 连接 HTTPS 服务并读取 TLS 协议版本、协商密码套件和服务端证书主题、签发者、有效期，用于服务安全基线检查。
+example: {host: "example.com", port: 443, server_name: "example.com"}
+schema:
+  type: object
+  properties:
+    host:
+      type: string
+      description: TLS 服务主机名或 IP
+    port:
+      type: integer
+      minimum: 1
+      maximum: 65535
+      description: TLS 端口，默认 443
+    server_name:
+      type: string
+      description: SNI 名称，默认使用 host
+    timeout:
+      type: integer
+      minimum: 1
+      maximum: 30
+      description: 连接超时秒数，默认 10
+  required: [host]

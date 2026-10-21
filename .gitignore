@@ -1,0 +1,51 @@
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ── Node ────────────────────────────────────────────────
+node_modules/
+
+# ── 运行时数据(会话/工作流/上传,均含用户内容,不入库)──
+gateway/sessions/
+gateway/workflows/
+gateway/workflow_runs/
+toolbox/workspace/
+logs/
+*.log
+
+# ── 机密与本地覆盖 ──────────────────────────────────────
+.env
+.env.*
+*_local.yaml
+*_local.json
+
+# ── 内部开发记录(阶段报告等,不入库)─────────────────
+docs/_stage*
+
+# ── 大体积分发内容(完整转移包走 GitHub Release 附件)──
+external/
+TRANSFER_MANIFEST.json
+*.zip
+
+# ── 第三方工具载荷(py install_tools.py 从官方 Release 还原)──
+toolbox/tools/*/bin/
+toolbox/tools/upx/upx-*-win64/
+toolbox/tools/oneforall/home/
+
+# ── RAG 第三方语料(install_tools.py 的 rag 条目 git clone 还原)──
+toolbox/rag/Des-CTF-Knowledge-main/
+
+# ── 构建产物 ────────────────────────────────────────────
+# 前端 gateway/frontend/dist/ 保持入库(预构建,克隆即用);
+# 若改为源码构建分发,取消下一行注释
+# gateway/frontend/dist/
+
+# ── IDE / 系统 ──────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store

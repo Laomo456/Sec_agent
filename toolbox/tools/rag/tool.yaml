@@ -1,0 +1,51 @@
+# 通用知识库(RAG)——图书馆:收集/索引/检索教程、方案、资料,给模型提供证据。
+# 实现:toolbox/rag_store.py(SQLite FTS5 trigram + 可选 embedding),run.py 只做 op 分发。
+name: rag
+description: 本地知识库——检索已收录的教程/方案/文档,返回证据卡(标题/来源/片段/分数);
+  也可把验证过的结论回收入库,越用越准。通用设计,不限领域
+category: knowledge
+danger: unknown    # 检索只读;收录/删除/反馈是写(见 op_danger)
+keywords: [知识库, 检索, 查资料, 教程, 方案, 文档, 笔记, 经验, rag, search, knowledge, 收录, 入库, 图书馆]
+timeout: 300
+origin: builtin
+op_danger:
+  search: readonly
+  status: readonly
+  collections: readonly
+  list_docs: readonly
+  get_doc: readonly
+  ingest_text: unknown
+  ingest_file: unknown
+  delete_doc: unknown
+  feedback: unknown
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。知识库是"图书馆":动手前先 search 找证据,
+  没找到就明说没有,别瞎编;用户确认或验证过的结论用 feedback/ingest_text 回收入库。
+  【已收录分区】ctf = Des-CTF 知识库全量(1000+ 篇大赛 WP、分类知识长文 SQL/命令执行/
+  SSTI/图片隐写…、50+ 现成脚本索引、Payload 速查表)——CTF 解题/找相似 WP/查技法
+  先搜它;证据卡的 source 是原始文件绝对路径,要看全文/跑脚本直接拿去读。
+  【检索·常用】
+  - search(query, collection?, mode?, top_k?, max_chars?): top_k 张证据卡。
+    mode: direct=关键词(默认,中文子串可检) / embedding=向量(需先配置) / hybrid=混合;
+    collection 留空搜全库;max_chars 控制每张卡片段长度(默认 300)
+  - collections(): 库里有哪些分区;status(): 索引规模/分词器/embedding 是否启用
+  - list_docs(collection?, limit?, offset?): 文档列表;get_doc(document_id, max_chars?): 取全文
+  【收录·写】
+  - ingest_text(content, title?, collection?, source?, overwrite?): 文本入库(自动分块/去重)
+  - ingest_file(path, title?, collection?): 收录工作区内的文件
+  - feedback(query, answer?, rating?, correction?): 用户纠正时调用;correction 会自动入索引
+  - delete_doc(document_id): 删除误收录的文档
+  检索结果是参考证据不是事实:结合当前任务交叉验证;引用结论时注明来源。
+example: {op: search, params: {query: AES CBC 填充方案, top_k: 5}}
+schema:
+  type: object
+  required: [op]
+  properties:
+    op:
+      type: string
+      enum: [search, status, collections, list_docs, get_doc, ingest_text, ingest_file, delete_doc, feedback]
+      description: 操作名,各操作参数见 usage 分组表
+    params:
+      type: object
+      description: '各操作参数:search {query, collection?, mode?, top_k?}, ingest_text {content, title?, collection?}, get_doc/delete_doc {document_id}'
+  additionalProperties: false

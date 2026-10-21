@@ -1,0 +1,31 @@
+name: packer_detect
+description: 查壳+魔数搜索：壳型/信号/字节模式
+category: reverse
+danger: readonly
+timeout: 120
+bin: "bin/DIE/diec.exe"   # Detect It Easy v3.10 控制台版（db/signatures/yara_rules 同目录）
+requires: []
+keywords: [查壳, 判壳, 壳识别, 加壳, 脱壳, packer, packed, unpack, entropy, 熵,
+  upx, vmprotect, themida, aspack, pyinstaller, nuitka, electron, dotnet, .net,
+  魔数, magic, 字节搜索, 字节模式, 特征码, hex, find_bytes, 搜字节, 搜文件]
+search_text: >
+  逆向第一步判壳：识别 UPX(含改魔数)/ASPack/PECompact/Themida/VMProtect/Enigma 等 PE 壳、
+  PyInstaller/Nuitka/.NET 广义壳。输出签名+熵+导入表+EP+overlay 信号命中集合与 verdict，
+  附路线建议。未知 PE 拿到手先跑这个再决定脱壳路线。
+  search 参数=在文件里搜魔数/字节模式（不用写脚本）：'UPX!' 按 ascii 字面量、
+  '55 50 58' 按 hex、'55 ?? 58' 的 ?? 通配任意字节（与 IDA find_bytes 同语义）、
+  hex:/ascii: 前缀可显式指定；输出命中偏移+所在节+上下文，0 命中也是结论（如排除 UPX）。
+example: {file: "crackme.exe"}
+schema:
+  type: object
+  properties:
+    file:
+      type: string
+      description: 目标文件路径（相对路径=会话工作区）
+    deep:
+      type: boolean
+      description: DIE 深扫+启发式（默认 true）
+    search:
+      type: string
+      description: "魔数/字节模式搜索：'UPX!'=ascii 字面量，'55 50 58'=hex，'??'=通配；hex:/ascii 前缀显式指定。返回命中偏移+所在节+上下文"
+  required: [file]

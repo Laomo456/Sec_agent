@@ -1,0 +1,25 @@
+name: upx
+description: UPX 查壳与脱壳
+category: reverse
+danger: intrusive
+timeout: 300
+bin: "bin/upx.exe"   # 相对本工具目录——整个目录可整体拷走，不依赖外部位置
+requires: []
+keywords: [加壳, 查壳, 脱壳, 解壳, upx, 壳, packed, unpack, 壳识别]
+search_text: 检测程序是否 UPX 加壳、查看压缩信息、脱壳还原原始程序。逆向分析第一步，IDA 识别到 UPX 头时用它。
+  黑话：test 对非 UPX 文件回 "Tested 0 files." 且退出码 1——这就是「不是 UPX」的答案，不是执行失败，不必再写脚本搜魔数复核（要复核用 packer_detect 的 search 参数）。
+example: {action: test, file: "crackme.exe"}
+schema:
+  type: object
+  properties:
+    action:
+      type: string
+      enum: [test, list, unpack]
+      description: test=检测是否UPX壳 / list=查看压缩信息 / unpack=脱壳还原
+    file:
+      type: string
+      description: 目标文件路径（相对路径=会话工作区）
+    output:
+      type: string
+      description: 脱壳输出路径（仅 unpack 用，默认为 原名.unpacked）
+  required: [action, file]

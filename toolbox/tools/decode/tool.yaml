@@ -1,0 +1,65 @@
+# 编解码瑞士军刀——对字符串/函数里抠出的常量做编解码与古典密码还原。
+# 实现:run.py 纯 stdlib 零依赖,op 分发;所有操作纯计算,无文件/网络副作用。
+name: decode
+description: 本地编解码瑞士军刀——base64(支持自定义编码表)/hex/base32/base58/base62/
+  url/unicode 转义/html 实体/摩斯/rot(凯撒/rot47)/xor/乱码修复;detect 自动识别未知编码,
+  按可读性打分返回候选。逆向抠出的换表 base64、CTF 套娃编码都从这里走
+category: crypto
+danger: readonly   # 纯计算,无任何副作用(逐 op 见 op_danger,全 readonly)
+keywords: [解码, 编码, 编解码, 解密, 加密, base64, 自定义码表, 换表, base32, base58,
+  base62, hex, 十六进制, 异或, xor, rot13, rot47, 凯撒, caesar, 移位, url编码,
+  百分号编码, unicode, 转义, html实体, 摩斯, morse, 二进制, 01串, 乱码, 字符集,
+  gbk, utf-8, decode, encode, codec, ctf]
+timeout: 120
+origin: builtin
+op_danger:
+  detect: readonly
+  base64: readonly
+  xor: readonly
+  hex: readonly
+  rot: readonly
+  base32: readonly
+  base58: readonly
+  base62: readonly
+  binary: readonly
+  url: readonly
+  unicode_escape: readonly
+  html: readonly
+  morse: readonly
+  mojibake: readonly
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。纯计算零副作用。所有 op 默认解码,
+  加 encode:true 反向编码(xor/rot47 加解密同操作,encode 参数无效)。
+  解码结果同时给 text(尽力按 utf-8/gbk 解)+ hex(二进制保底)。data 上限 256KB。
+  不知道是什么编码先 detect,不要瞎猜。
+  【常用】
+  - detect(data): 自动试 base64/hex/base32/58/62/rot/xor/摩斯/乱码等,按可读性打分
+    返回 top 候选(自动多解一层套娃,如 base64>base64)
+  - base64(data, alphabet?, urlsafe?, encode?): alphabet=64 字符自定义码表(逆向 App
+    常见换表,把抠出的表传进来);容忍换行/空白,自动补 padding
+  - xor(data, key?, key_hex?, data_hex?): key 循环异或(文本或 hex);不给 key 则
+    暴力全部 256 个单字节并按可读性打分
+  - hex(data, encode?): 容忍 0x 前缀/空格/\x/逗号分隔
+  - rot(shift?, rot47?, encode?): 凯撒移位默认 13;rot47:true 处理 ASCII 可见区
+  【其他】
+  - base32 / base58(比特币表) / base62 / binary(01 串) / url(百分号;plus:true
+    把 + 也解成空格) / unicode_escape(\uXXXX、\xNN,输入应为 ASCII 串) /
+  html(实体) / morse(摩斯电码,/ 分词) / mojibake(乱码修复:自动试
+  utf-8/gbk/latin-1 错配组合,按中文占比排序)
+  detect 识别不出来大概率是:自定义码表 base64(去逆向找表传给 alphabet)、
+  套了三层以上(拿 detect 候选结果再跑一次)、或真加密(AES/RC4——先逆向找密钥)。
+example: {op: detect, params: {data: ZmxhZ3tiYXNlNjRfZHViZWV9}}
+schema:
+  type: object
+  required: [op]
+  properties:
+    op:
+      type: string
+      enum: [detect, base64, xor, hex, rot, base32, base58, base62, binary,
+             url, unicode_escape, html, morse, mojibake]
+      description: 操作名,各操作参数见 usage 分组表
+    params:
+      type: object
+      description: '通用 {data 必填, encode?};base64 {alphabet?, urlsafe?};
+        xor {key?, key_hex?, data_hex?};rot {shift?, rot47?};url {plus?}'
+  additionalProperties: false

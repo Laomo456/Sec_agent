@@ -1,0 +1,130 @@
+# 安卓脱壳卡——MuMu 模拟器 + frida 运行时脱壳(360 加固等),环境自包含在 bin/ 与 gateway venv。
+# 来源:2026-09-20 实证管线(360 加固样本跑通)产品化,反检测三板斧固化:
+#   frida-server 改名 .sysmon / 监听 127.0.0.1:8899 非默认端口 / attach 已运行进程(避开启动期反调试)。
+name: android_unpack
+description: 安卓脱壳——加固 APK(360/梆梆类)运行时内存 dump dex,自带 adb+frida-server,
+  MuMu 模拟器一键启停,attach 模式反检测,产物自动扫描业务 dex + API 端点。
+category: reverse
+danger: intrusive   # 整卡与模拟器/目标进程交互(逐 op 见 op_danger)
+timeout: 900
+origin: builtin
+keywords: [安卓, android, apk, 脱壳, unpack, dexdump, frida, 360加固, 梆梆,
+  爱加密, dex, dump, 内存搜索, 模拟器, mumu, 逆向, 加固, 壳, classes.dex]
+op_danger:
+  env_check: readonly
+  emu: intrusive
+  frida: intrusive
+  install: intrusive
+  launch: intrusive
+  ps: readonly
+  dexdump: intrusive
+  dex_scan: readonly
+  shell: intrusive
+  pull: readonly
+  logcat: readonly
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。自带全套环境:adb/frida-server 在本卡 bin/,
+  frida 库在 gateway venv;只依赖本机 MuMu 安装(路径可配 config.json)。
+  适用:加固 APK(360/梆梆/爱加密类)静态 jadx 只见壳,需要运行时内存 dump 出真实 dex。
+  与 jadx 卡分流:jadx 反编译未加固 apk/dex;本卡负责把加固 app 的 dex 先 dump 出来。
+  【主线(默认顺序)】
+  - env_check(): 一键体检——MuMu/adb/root/frida-server/frida 库五项状态 + 下一步建议。
+    任何时候卡住先跑这个
+  - emu(action): start=启动模拟器并等安卓就绪(≤120s) / stop / restart / status
+  - frida(action): ensure=幂等部署(root→push .sysmon→起 8899→adb forward→连通验证) /
+    stop / status
+  - install(apk): 装到模拟器(-r 覆盖);apk 相对路径=会话工作区
+  - launch(pkg): monkey 启动 app(无需知道 Activity 名);等 3s 让壳跑起来
+  - ps(filter?): 进程列表找 pid;支持包名过滤。加固 app 此时应已运行
+  - dexdump(pkg|pid): attach 模式 frida_dexdump 深搜 dump 全部 dex(去重+修头),
+    落 会话工作区/files/android/<pkg>_<时间戳>/,回显每个 dex 大小
+  - dex_scan(dir?, keyword?): 扫 dump 出的 dex——keyword(业务域名/特征串)定位业务 dex,
+    并按 Retrofit 风格正则提 API 端点清单;不传 dir 用最近一次 dump 目录
+  【辅助】
+  - shell(cmd): 模拟器内 adb shell(自带 root),查 /proc、pm list 等收尾动作
+  - pull(remote): 从模拟器拉文件到会话工作区
+  - logcat(lines?, filter?): 最近日志,查崩溃/反调试输出
+  【实战要点】
+  - 反检测已固化:server 名 .sysmon、端口 8899 非默认、attach 不 spawn;若目标仍检测
+    frida(闪退),先 logcat 看原因,别改回默认端口
+  - 【壳识别→选打法】动手前/受挫时(闪退、dump 失败、0 dex)先 rag 搜 combat 分区
+    《加固壳总档》:按 so 家族认壳(libjiagu/tertarsafe/libunisec/mogosec…),
+    档位判据(libjiagu.so 无 ffi_*=免费版抽壳,+ffi_* 导入=VMP 档),每壳有对应
+    突破手段与真实样本出处;腾讯TP/UE5 IoStore/Lua VM 不是壳,别误判
+  - dump 前目标进程必须在跑(launch 后再 dexdump);360 加固 dump 出几十个 dex 是正常
+    现象,业务 dex 靠 dex_scan 的域名关键词定位
+  - dump 出的 dex 用 jadx 卡反编译继续分析
+  - 【姊妹卡分流】frida 闪退/反检测绕不过 → blackdex_unpack 卡(免 root 免 frida 设备侧
+    脱壳);Flutter app(dart 层黑盒)→ flutter_blutter 卡;Unity IL2CPP → unity_il2cpp 卡;
+    要主动调用 so 里的签名/加密函数 → unidbg_emu 卡
+example: {op: env_check, params: {}}
+schema:
+  type: object
+  required:
+  - op
+  properties:
+    op:
+      type: string
+      enum:
+      - env_check
+      - emu
+      - frida
+      - install
+      - launch
+      - ps
+      - dexdump
+      - dex_scan
+      - shell
+      - pull
+      - logcat
+      description: 11 个 op,主线 env_check→emu(start)→frida(ensure)→install→launch→ps→dexdump→dex_scan
+    params:
+      type: object
+      description: 各 op 参数:emu/frida {action} · install {apk} · launch {pkg} · ps {filter?}
+        · dexdump {pkg|pid, deep?=true, output?} · dex_scan {dir?, keyword?} · shell
+        {cmd} · pull {remote, output?} · logcat {lines?=200, filter?} · env_check {}
+      properties:
+        action:
+          type: string
+          description: 'emu: start/stop/restart/status；frida: ensure/stop/status'
+        apk:
+          type: string
+          description: 'install: APK 文件路径'
+        pkg:
+          type: string
+          description: 应用包名，例如 com.example.app
+        pid:
+          type:
+          - integer
+          - string
+          description: 'dexdump: 进程 PID，1..4194304，与 pkg 至少给一个'
+        deep:
+          type:
+          - boolean
+          - string
+          description: 'dexdump: 深度扫描，默认 true，支持字符串 true/false'
+        output:
+          type: string
+          description: 输出路径；dexdump 目录必须为空或不存在
+        dir:
+          type: string
+          description: 'dex_scan: dump 目录，支持相对会话 files 路径'
+        keyword:
+          type: string
+          description: 'dex_scan: 搜索特征串'
+        filter:
+          type: string
+          description: 'ps/logcat: 过滤文本'
+        cmd:
+          type: string
+          description: 'shell: Android shell 命令'
+        remote:
+          type: string
+          description: 'pull: Android 绝对路径'
+        lines:
+          type:
+          - integer
+          - string
+          description: 'logcat: 行数，1..10000，默认 200'
+      additionalProperties: false
+  additionalProperties: false

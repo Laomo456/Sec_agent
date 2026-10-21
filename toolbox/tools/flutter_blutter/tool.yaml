@@ -1,0 +1,65 @@
+# Flutter 逆向卡——blutter 解析 libapp.so(Dart AOT 快照),bin 已安置。
+# blutter 是 worawit/blutter 的 Python 脚本仓库(非单一二进制),首次运行自动下载
+# Dart SDK 并编译 dartvm 解析库(需要 CMake + VS Build Tools + 网络)。
+name: flutter_blutter
+description: Flutter 逆向——blutter 解析 APK 里的 libapp.so(Dart AOT),还原类/方法清单、
+  带符号反汇编、 Frida hook/IDA 辅助脚本;自动解包 APK 的 lib/arm64-v8a。
+category: reverse
+danger: readonly   # 纯本地解析,不与设备/目标交互(逐 op 见 op_danger)
+timeout: 900
+origin: builtin
+keywords: [flutter, dart, libapp.so, libflutter.so, aot, blutter, 逆向, 移动端,
+  snapshot, dartvm, hook脚本, arm64]
+op_danger:
+  env_check: readonly
+  run: readonly
+  clean: readonly
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。适用:Flutter app 逆向——jadx 只见
+  Flutter 壳/libapp.so 是黑盒,需要还原 Dart 层类/方法与字符串。
+  blutter(https://github.com/worawit/blutter)必须先安置在本卡 bin/blutter/。
+  【主线】
+  - env_check(): 体检——blutter 仓库/venv 依赖(requests+pyelftools)/Dart SDK
+    引导状态/CMake,缺什么给什么指引,任何时候卡住先跑这个
+  - run(apk|dir, out?, no_analysis?): 解析。apk=Flutter APK 路径(自动解 lib/arm64-v8a);
+    dir=已解包目录(直接含 libapp.so+libflutter.so 或 lib/arm64-v8a 子目录)。产物落工作区
+    files/flutter/<名>_<时间戳>/:pp.txt(Dart 对象/类清单)、asm/(带类方法名的
+    反汇编)、IDA/Frida 辅助脚本。首次运行会下载 Dart SDK+编译,较慢属正常
+  - clean(): 清理本卡 bin 下的 dartsdk 与构建缓存(下次 run 重新引导)
+  【实战要点】
+  - bin/blutter 缺失时 env_check 会给 git clone 指引;网络差用镜像
+    (git clone https://ghproxy.com/https://github.com/worawit/blutter 之类)
+  - libflutter.so 决定 Dart 版本,blutter 靠它选 SDK——解包目录别只留 libapp.so
+  - 产物接力:pp.txt 找类/方法 → asm/ 看实现 → 生成的 Frida 脚本挂到
+    android_unpack 卡(frida op 已就绪的模拟器)做运行时验证
+example: {op: env_check, params: {}}
+schema:
+  type: object
+  required:
+  - op
+  properties:
+    op:
+      type: string
+      enum:
+      - env_check
+      - run
+      - clean
+      description: 3 个 op,主线 env_check→run
+    params:
+      type: object
+      description: 各 op 参数:run {apk|dir, out?, no_analysis?} · env_check {} · clean {}
+      properties:
+        apk:
+          type: string
+          description: Flutter APK，相对会话 files 或绝对路径
+        dir:
+          type: string
+          description: 直接包含 libapp.so 和 libflutter.so 的目录，或 APK 解包根目录；与 apk 二选一
+        no_analysis:
+          type: [boolean, string]
+          description: Disable higher-level instruction analysis for unsupported Dart patterns; emits raw disassembly. Default false.
+        out:
+          type: string
+          description: 输出目录，相对会话 files 或绝对路径；必须为空或不存在
+      additionalProperties: false
+  additionalProperties: false

@@ -1,0 +1,19 @@
+name: file_write
+description: 写入文本文件（覆盖）
+category: basic
+danger: intrusive
+timeout: 60
+requires: []
+keywords: [写文件, 写入, 保存, 存到, 存成, 输出到文件, write, 保存脚本, 生成, create]
+search_text: 写入/生成文本文件：保存代码脚本、写出报告、生成配置。覆盖式写入。
+example: {path: "notes/hello.txt", content: "你好，世界"}
+schema:
+  type: object
+  properties:
+    path:
+      type: string
+      description: 目标文件路径（相对=会话工作区，父目录自动创建）
+    content:
+      type: string
+      description: 文件内容
+  required: [path, content]

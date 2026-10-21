@@ -1,0 +1,8 @@
+storage:
+  data_dir: workspace/rag
+  database: rag.sqlite3
+search:
+  mode: direct
+embedding:
+  enabled: false
+  provider: none

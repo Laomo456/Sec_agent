@@ -1,0 +1,67 @@
+# Unity IL2CPP 逆向卡——Il2CppDumper 还原 C# 伪代码/符号,bin 已安置。
+# Perfare/Il2CppDumper 的 Windows 版发布包解压到 bin/Il2CppDumper/ 即用(.NET,免编译)。
+name: unity_il2cpp
+description: Unity IL2CPP 逆向——Il2CppDumper 从 APK/IPA/libil2cpp.so+global-metadata.dat
+  dump 出 dump.cs(C# 伪代码)、script.json(符号)、stringliteral.json(字符串),
+  另生成 IDA/Ghidra 脚本把符号喂回反汇编器。
+category: reverse
+danger: readonly   # 纯本地解析(逐 op 见 op_danger)
+timeout: 300
+origin: builtin
+keywords: [unity, il2cpp, global-metadata, libil2cpp, dump.cs, script.json,
+  游戏, 逆向, mono, ida, ghidra, stringliteral]
+op_danger:
+  env_check: readonly
+  dump: readonly
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。适用:Unity IL2CPP 游戏——so 里函数无名,
+  需要还原 C# 类/方法名、字符串与符号表。
+  Il2CppDumper(https://github.com/Perfare/Il2CppDumper/releases)发布包解压到
+  本卡 bin/Il2CppDumper/(exe+dll 一套)。
+  【主线】
+  - env_check(): 体检 exe 与运行库,缺了给下载/安置指引;任何时候卡住先跑这个
+  - dump(input, metadata?, output?): input 支持 apk/ipa(自动解压找
+    libil2cpp+metadata)/单独 libil2cpp.so(此时须给 metadata=global-metadata.dat 路径)
+    /il2cpp 游戏 exe。产物落工作区 files/unity/<名>_<时间戳>/:dump.cs、
+    script.json、stringliteral.json、ida*.py、ghidra*.py
+  【实战要点】
+  - dump.cs 直接按 C# 读逻辑;script.json 配合生成的 ida 脚本把符号导入 IDA
+    (IDA 卡/F5 前先跑脚本,函数名立刻可读)
+  - metadata 被加密/抹头的样本会报错——那是壳/metadata 加密,先走 android_unpack
+    脱壳或 rag combat《加固壳总档》认壳
+  - 字符串线索(密钥/URL/开关)在 stringliteral.json 里 grep
+example: {op: env_check, params: {}}
+schema:
+  type: object
+  required:
+  - op
+  properties:
+    op:
+      type: string
+      enum:
+      - env_check
+      - dump
+      description: 2 个 op,主线 env_check→dump
+    params:
+      type: object
+      description: 各 op 参数:dump {input, metadata?, output?} · env_check {}
+      properties:
+        input:
+          type: string
+          description: APK/IPA/ZIP 或 IL2CPP native 二进制路径
+        metadata:
+          type: string
+          description: global-metadata.dat 路径，native 输入时必填
+        output:
+          type: string
+          description: 输出目录，必须为空或不存在
+        abi:
+          type: string
+          description: APK 架构，默认优先 arm64-v8a
+          enum:
+          - arm64-v8a
+          - armeabi-v7a
+          - x86_64
+          - x86
+      additionalProperties: false
+  additionalProperties: false

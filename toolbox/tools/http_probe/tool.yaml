@@ -1,0 +1,24 @@
+name: http_probe
+description: HTTP 响应与安全头探测
+category: web
+danger: readonly
+timeout: 60
+requires: []
+keywords: [http, 响应, 状态码, header, 安全头, title, server, web, probe, fingerprint]
+search_text: 获取 URL 的状态码、重定向链、响应头、页面标题和常见安全响应头，用于 Web 信息收集与服务确认。
+example: {url: "https://example.com/", follow_redirects: true}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 以 http:// 或 https:// 开头的目标 URL
+    follow_redirects:
+      type: boolean
+      description: 是否跟随重定向，默认 true
+    timeout:
+      type: integer
+      minimum: 1
+      maximum: 30
+      description: 请求超时秒数，默认 10
+  required: [url]

@@ -1,0 +1,41 @@
+name: ffuf
+description: 高速 Web 模糊测试(FUZZ)
+category: web
+danger: intrusive
+timeout: 900
+bin: "bin/ffuf.exe"
+requires: []
+keywords: [fuzz, ffuf, 模糊测试, 爆破, 目录, 目录扫描, 路径, 字典, bruteforce, discovery, 参数, vhost]
+search_text: Go 写的高速 Web fuzzer：目录/文件发现、参数名爆破、虚拟主机枚举、POST body 注入点探测。
+  url 里用 FUZZ 关键字标记注入位置（如 http://target/FUZZ 或 http://target/?FUZZ=1），
+  比 dirsearch 快得多，支持自动校准过滤垃圾 404。
+example: {url: "http://target/FUZZ", auto_filter: true}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 目标 URL，必须包含 FUZZ 关键字标注入点
+    wordlist:
+      type: string
+      description: 自定义字典路径(可选)，默认用内置常见路径字典
+    match_status:
+      type: string
+      description: '只报这些状态码，逗号分隔+区间，如 "200,301-308,401,403"'
+    method:
+      type: string
+      enum: [GET, POST, PUT, DELETE, HEAD, OPTIONS]
+      description: 请求方法(可选，默认 GET)
+    data:
+      type: string
+      description: POST body，含 FUZZ 关键字，如 "user=FUZZ&pass=1"
+    auto_filter:
+      type: boolean
+      description: 自动校准(过滤自定义 404/垃圾响应)，推荐开启
+    follow_redirects:
+      type: boolean
+      description: 跟随 3xx 跳转
+    max_time:
+      type: integer
+      description: 最长跑多少秒(可选)
+  required: [url]

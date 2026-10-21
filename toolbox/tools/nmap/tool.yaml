@@ -1,0 +1,26 @@
+name: nmap
+description: 端口扫描与服务识别
+category: recon
+danger: intrusive
+timeout: 900
+bin: "bin/Nmap/nmap.exe"   # 相对本工具目录——自带完整发行包，可整体拷走
+requires: []                                   # 用 bin 时留空，run.py 自检存在性
+keywords: [端口, 扫描, port, scan, nmap, 服务识别, service, 主机发现]
+search_text: 扫描目标主机开放端口、识别运行服务与版本。信息收集阶段摸清攻击面用。
+example: {target: "10.10.14.5", ports: "1-1000", service_version: true}
+schema:
+  type: object
+  properties:
+    target:
+      type: string
+      description: 目标 IP / CIDR / 主机名
+    ports:
+      type: string
+      description: '端口范围，如 "1-1000" 或 "80,443"'
+    service_version:
+      type: boolean
+      description: 启用 -sV 服务版本探测
+    top_ports:
+      type: integer
+      description: 只扫最常见 N 个端口(如 100)，快
+  required: [target]

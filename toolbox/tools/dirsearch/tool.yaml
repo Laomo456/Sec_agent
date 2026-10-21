@@ -1,0 +1,22 @@
+name: dirsearch
+description: Web 目录/路径爆破
+category: web
+danger: intrusive
+timeout: 600
+requires: []
+keywords: [目录, 爆破, 目录扫描, dirsearch, directory, brute, 路径, fuzz, web]
+search_text: 对 Web 目标做目录与文件路径字典爆破，发现隐藏路径、后台、备份文件。
+example: {url: "http://target/", extensions: "php,html"}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 目标 URL，以 http(s):// 开头
+    extensions:
+      type: string
+      description: '逗号分隔扩展名，如 "php,html,bak"'
+    wordlist:
+      type: string
+      description: 自定义字典路径(可选)
+  required: [url]

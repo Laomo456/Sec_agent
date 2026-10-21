@@ -1,0 +1,81 @@
+# unidbg 模拟执行卡——JVM 里模拟调用安卓 native so(签名算法/加固 init),bin 已安置。
+# 卡本身零二进制:依赖外部 JDK+Maven(本机装),unidbg 库由 maven 从中央仓库拉。
+# 本地开发参考源码可选放 bin/unidbg/(git clone zhkl0228/unidbg)。
+name: unidbg_emu
+description: unidbg native 模拟——生成 maven 脚手架(加载 so + 调 JNI_OnLoad 的
+  Java harness)并编译运行,在 PC 上直接调用安卓 so 里的函数(签名/加密算法还原),
+  免设备免 root。
+category: reverse
+danger: unknown    # scaffold 只读生成;run 在本机 JVM 执行目标 so(不可信代码,见 op_danger)
+timeout: 900
+origin: builtin
+keywords: [unidbg, so, 模拟执行, emulate, arm, elf, 签名算法, sign, jni,
+  native, 逆向, maven, java, 算法还原, 主动调用]
+op_danger:
+  env_check: readonly
+  scaffold: readonly
+  run: intrusive   # 执行目标 so 代码(虽在 JVM 沙箱里,按不可信对待)
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。适用:拿到目标 so 需要主动调用其中的
+  签名/加密函数(unidbg 场景),不想配设备/躲开反调试。
+  前置:项目 external/java 内置 JDK；Maven 在卡内 bin/maven/(也可
+  config.json maven_path 覆盖或用 PATH 的 mvn),unidbg-android 由 maven 自动拉
+  (中央仓库已核到 0.9.9,版本在本卡 config.json 改)。参考源码可选 clone 到 bin/unidbg/。
+  【主线】
+  - env_check(): 体检项目内 JDK/Maven；不代表目标 SO 执行成功,缺什么给什么指引
+  - scaffold(name?, so, pkg?, arch?): 在工作区 files/unidbg/<名>/ 生成 maven 工程:
+    pom.xml(unidbg-android 依赖)+ src/main/java/unidbg/<名>.java harness
+    (加载 so→调 JNI_OnLoad→留好调目标函数的 TODO 位),so 路径相对工程写入 harness，移动整个项目后仍有效
+  - run(project, main?, offline?): mvn compile + exec:java 跑 harness;首次会下依赖较慢;
+    改函数调用用 file_edit 改 harness 再 run
+  【实战要点】
+  - harness 是模板:先跑通 JNI_OnLoad(打印 base),再用 file_edit 把 TODO 位换成
+    真实调用(callStaticJniMethodObject 按类名/方法签名,callFunction 按偏移)
+  - JNI_OnLoad 就崩 → so 里有环境检测(常见:查 maps/包名),AbstractJni 覆写
+    getPackageName 之类喂假环境;反制套路可 rag 搜 combat 分区
+  - 与静态分析接力:jadx/IDA 先定位目标函数签名,harness 里按签名调
+example: {op: env_check, params: {}}
+schema:
+  type: object
+  required:
+  - op
+  properties:
+    op:
+      type: string
+      enum:
+      - env_check
+      - scaffold
+      - run
+      description: 3 个 op,主线 env_check→scaffold→(file_edit 改 harness)→run
+    params:
+      type: object
+      description: 各 op 参数:scaffold {so, name?, pkg?, arch?=64} · run {project, main?}
+        · env_check {}
+      properties:
+        so:
+          type: string
+          description: 'scaffold: 目标 SO 路径'
+        name:
+          type: string
+          description: 'scaffold: 工程名，字母数字_-，不会覆盖已有工程'
+        pkg:
+          type: string
+          description: 'scaffold: Android 包名，例如 com.example.app'
+        arch:
+          type:
+          - integer
+          - string
+          description: 'scaffold: 32/64，兼容 arm/arm64，默认 64'
+        project:
+          type: string
+          description: 'run: scaffold 返回的工程名或路径'
+        main:
+          type: string
+          description: 'run: 完整 Java 类名，多个类时必填'
+        offline:
+          type:
+          - boolean
+          - string
+          description: 'run: 使用本地 Maven 缓存，默认 false，支持字符串 true/false'
+      additionalProperties: false
+  additionalProperties: false

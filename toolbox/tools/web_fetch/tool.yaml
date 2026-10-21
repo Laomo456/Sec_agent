@@ -1,0 +1,37 @@
+name: web_fetch
+description: 发 HTTP 请求访问网页/API（curl）
+category: network
+danger: intrusive
+timeout: 150
+requires: [curl]
+keywords: [上网, 网络, 网页, 网站, http, https, curl, 请求, fetch, get, post, api, 下载, 访问, 抓取]
+search_text: 访问互联网：抓网页正文、调 API、下载文本资源。支持 GET/POST/PUT/DELETE、自定义 header 与请求体，自动跟随跳转，默认浏览器 UA（避免被拒）。抓网页正文记得 text_only=true（去标签噪音）；JS 动态渲染的站点（知乎/B站等）静态 HTML 里没有数据，换服务端渲染的站点或其 JSON API；域名解析失败=域名不存在，换站点别重试。国内网络可达性（重要，别浪费轮次）：Google/DuckDuckGo/Reddit 直连超时/重置，不可用；中文搜索首选 cn.bing.com/search?q=（裸请求即可，无需 cookie，最稳）；百度 /s 反爬激进（"网络不给力"/安全验证假页），cookie_jar 两步法也常被拦，失败一次就换 bing，别重试。cookie_jar 用于需要会话的其他站点（登录态/二次请求）。响应尾部附 HTTP 状态码；大响应自动截断，用 read_output 看全量。
+example: {url: "https://cn.bing.com/search?q=人工智能", text_only: true}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 完整 URL（http/https）
+    method:
+      type: string
+      enum: [GET, POST, PUT, DELETE, PATCH, HEAD]
+      description: HTTP 方法（默认 GET）
+    headers:
+      type: object
+      description: 请求头（键值对，可选；默认已带浏览器 User-Agent）
+      additionalProperties: {type: string}
+    body:
+      type: string
+      description: 请求体（POST/PUT/PATCH 用，如 JSON 字符串）
+    text_only:
+      type: boolean
+      description: HTML 转纯文本（去 script/style/标签）。抓网页正文必开，否则全是标签噪音
+    cookie_jar:
+      type: string
+      description: cookie 罐文件名（如 ck.txt，落会话工作区）。本次请求读写同一罐：
+        先带它访问首页拿 cookie，再带同一罐访问目标页即可过百度等反爬
+    timeout_s:
+      type: integer
+      description: 超时秒数（默认 30，上限 120）
+  required: [url]

@@ -1,0 +1,25 @@
+model:
+  active: primary
+  failover: []
+  profiles:
+    primary:
+      base_url: https://api.openai.com/v1
+      api_key: ''
+      model: ''
+      max_tokens: 4000
+      temperature: 0.6
+      timeout_s: 600
+      stream: true
+agent:
+  max_iterations: 40
+  context_budget_est: 64000
+  tool_surface: native
+  tool_call_compat: false
+  system_prompt: ''
+tools:
+  command: .venv/Scripts/python.exe
+  args: [../toolbox/server.py]
+  workspace: ../toolbox/workspace
+server:
+  host: 127.0.0.1
+  port: 8300

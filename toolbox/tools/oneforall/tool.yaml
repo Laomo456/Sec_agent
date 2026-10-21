@@ -1,0 +1,33 @@
+name: oneforall
+description: 子域名收集一把梭
+category: recon
+danger: readonly
+timeout: 1500
+keywords: [oneforall, 子域名, subdomain, 收集, 枚举, 域名, 资产发现, 爆破, 字典, 泛解析, altdns, 置换, 接管, takeover, 存活, 攻击面]
+search_text: 主动+被动一体的子域收集器：证书透明/搜索引擎/第三方 API 被动聚合 + 字典爆破 + altdns 置换重组 + DNS 解析 + HTTP 存活 + CDN/指纹/接管检查。
+  比 subfinder 慢(全程 5~20 分钟)但更全更细，subfinder 找不到或要爆破/存活验证时用；只要快速被动枚举就先用 subfinder。
+  降档开关：brute=False 纯被动(省 60% 时间)；dns/req=False 跳过解析与存活(结果全是未验证裸名，泛解析域名慎读)；
+  takeover=True 开子域接管检查；alive_only=True 只导出存活子域。结果含来源/解析 IP，完整 JSON 留在输出尾部给出的路径。
+example: {domain: "example.com"}
+schema:
+  type: object
+  properties:
+    domain:
+      type: string
+      description: 目标根域名，如 example.com（不带 https://）
+    brute:
+      type: boolean
+      description: 启用爆破模块（默认 true，慢；false 则纯被动收集，快）
+    dns:
+      type: boolean
+      description: DNS 解析子域拿 IP/泛解析判断（默认 true）
+    req:
+      type: boolean
+      description: HTTP 请求验证存活+端口/CNAME/指纹（默认 true，dns=false 时建议也关）
+    takeover:
+      type: boolean
+      description: 检查子域接管风险（默认 false）
+    alive_only:
+      type: boolean
+      description: 只导出存活的子域（默认 false；依赖 req=true 产生的存活数据）
+  required: [domain]

@@ -1,0 +1,42 @@
+name: attack_reference
+description: CyberStrike 攻击方法论参考库：检索和按需读取本机 Skill 文档
+category: knowledge
+danger: readonly
+timeout: 120
+origin: builtin
+keywords: [攻击方法, 攻击参考, 漏洞验证, 渗透方法, skill, CyberStrike, SSRF, XSS, JWT, IDOR, CORS, XXE, WebSocket, Recon, OWASP, MITRE]
+op_danger:
+  categories: readonly
+  search: readonly
+  read: readonly
+  status: readonly
+search_text: |
+  这是 CyberStrike 的只读攻击方法论参考工具，不执行 Skill 中的命令，也不自动向目标发送请求。
+  对项目进行授权测试时，先用 search 按漏洞类型、技术栈、协议或测试阶段查参考，再结合当前授权范围和实时证据调用实际探测工具。
+  - categories(): 查看可用方法论分类和数量。
+  - search(query, category?, top_k?, max_chars?): 返回标题、相对路径、描述和短匹配片段；结果只是参考，不代表目标存在漏洞。
+  - read(path 或 skill, offset?, max_chars?): 按需读取一份 SKILL.md 的有限正文；分段读取时用返回的 next_offset。
+  - status(): 查看 Skill 根目录是否可用、文件数量和扫描时间。默认读取 %USERPROFILE%/.local/share/cyberstrike/skill，可用 CYBERSTRIKE_SKILL_ROOT 覆盖。
+  Skill 文档中的命令和示例按资料处理，实际执行必须另行调用已有工具，并且不得超出用户授权范围。
+example:
+  op: search
+  params: {query: SSRF, top_k: 5}
+schema:
+  type: object
+  required: [op]
+  additionalProperties: false
+  properties:
+    op:
+      type: string
+      enum: [categories, search, read, status]
+    params:
+      type: object
+      additionalProperties: false
+      properties:
+        query: {type: string, minLength: 1, maxLength: 200}
+        category: {type: string, maxLength: 100}
+        top_k: {type: integer, minimum: 1, maximum: 20}
+        max_chars: {type: integer, minimum: 200, maximum: 12000}
+        path: {type: string, minLength: 1, maxLength: 500}
+        skill: {type: string, minLength: 1, maxLength: 200}
+        offset: {type: integer, minimum: 0, maximum: 100000}

@@ -1,0 +1,171 @@
+# IDA Pro 逆向卡——直接操作本机已打开的 IDA Pro 中的数据库(IDB)。
+# 实现:run.py 纯 stdlib(urllib)直连 ida-pro-mcp 插件的 HTTP 端点(默认 :13337/mcp),
+# 无状态免握手(zeromcp 实现直接 tools/call 即应答);不依赖 mcp_bridge/SDK。
+# 链路 = IDA Pro + ida-pro-mcp 插件(Edit→Plugins→MCP),IDA 开着才监听 :13337,
+# 没开则连不上,报错带启动提示。与老 MCP 捆绑卡同源策展(dnspy 同款迁移)。
+name: ida
+description: IDA Pro 逆向分析——直接操作已在 IDA Pro 中打开的数据库,无需本地文件路径。
+  总览/反编译/反汇编/交叉引用/读内存/搜索/py_eval 兜底 + 改名/注释/补丁/类型等写操作。
+  native(.so/PE)算法逆向用这张卡;Java 层用 jadx,.NET 用 dnspy,动态调试用 x64dbg
+category: reverse
+danger: unknown    # 混合:43 只读 + 24 写(见 op_danger)
+keywords: [IDA, ida, 逆向, 反编译, decompile, 反汇编, disasm, 交叉引用, xref,
+  十六进制, hex, 字节, 内存, 字符串, 导入表, 函数, 伪代码, 补丁, patch, 改名,
+  rename, so, native, PE, 算法, CTF, 分析]
+timeout: 300
+origin: builtin
+op_danger:
+  # 常用·只读
+  survey_binary: readonly
+  decompile: readonly
+  disasm: readonly
+  xrefs_to: readonly
+  xref_query: readonly
+  get_bytes: readonly
+  get_string: readonly
+  get_int: readonly
+  get_global_value: readonly
+  find: readonly
+  find_regex: readonly
+  find_bytes: readonly
+  search_text: readonly
+  list_funcs: readonly
+  lookup_funcs: readonly
+  func_query: readonly
+  imports: readonly
+  imports_query: readonly
+  entity_query: readonly
+  server_health: readonly
+  list_ops: readonly
+  # 万能兜底:代码在 IDA 进程内执行,按写处理
+  py_eval: unknown
+  # 写操作(改 IDB)
+  rename: unknown
+  set_comments: unknown
+  append_comments: unknown
+  patch: unknown
+  patch_asm: unknown
+  put_int: unknown
+  declare_stack: unknown
+  delete_stack: unknown
+  declare_type: unknown
+  set_type: unknown
+  set_op_type: unknown
+  make_data: unknown
+  enum_upsert: unknown
+  infer_types: unknown
+  diff_before_after: unknown
+  define_func: unknown
+  define_code: unknown
+  undefine: unknown
+  add_bookmark: unknown
+  force_recompile: unknown
+  type_apply_batch: unknown
+  idb_save: unknown
+  # 不常用·只读
+  analyze_batch: readonly
+  analyze_component: readonly
+  analyze_function: readonly
+  basic_blocks: readonly
+  callees: readonly
+  callgraph: readonly
+  export_funcs: readonly
+  find_xref_signatures: readonly
+  func_profile: readonly
+  insn_query: readonly
+  int_convert: readonly
+  list_globals: readonly
+  make_signature: readonly
+  make_signature_for_function: readonly
+  make_signature_for_range: readonly
+  py_exec_file: unknown
+  read_struct: readonly
+  search_structs: readonly
+  stack_frame: readonly
+  trace_data_flow: readonly
+  type_inspect: readonly
+  type_query: readonly
+  xrefs_to_field: readonly
+search_text: |
+  调用 {"op": 操作名, "params": {...}}。目标 = 本机已打开的 IDA Pro(ida-pro-mcp 插件,
+  默认 http://127.0.0.1:13337,IDA 开着才有;没开报错会提示)——直接操作 IDA 里当前
+  打开的数据库,无需本地文件路径。四卡分工:native/.so/PE 算法用本卡,Java 层 jadx,
+  .NET dnspy,动态调试/脱壳 x64dbg。参数名见各行括号(? = 可选);批量类参数
+  (queries/addrs/regions/items/batch/edits/patches/decls)都收数组,一次多查。
+  分析主线:survey_binary 总览 → 字符串/导入/函数定位 → decompile 啃算法 →
+  xrefs 串调用关系;卡面没有的 op 会自动查远端,版本漂移先 op=list_ops 看实况。
+  【查·常用只读】
+  - survey_binary(detail_level?): 二进制总览:架构/段/入口/导入/字符串/热点函数——分析第一步(函数>10k 用 minimal)
+  - decompile(addr, include_addresses?): 反编译函数为 C 伪代码
+  - disasm(addr, max_instructions?, offset?, include_total?): 反汇编,分页
+  - xrefs_to(addrs, limit?): 查地址/函数被谁引用(批量)
+  - xref_query(queries): 交叉引用富查询:方向/类型/分页/去重
+  - get_bytes(regions): 读内存原始字节(regions 批量)
+  - get_string(addrs): 读地址处字符串(批量)
+  - get_int(queries): 按类型读整数:i8/u32/u64/le/be 批量
+  - get_global_value(queries): 按名或地址读全局变量值
+  - find(type, targets, limit?, offset?): 搜字符串/立即数/对地址的引用
+  - find_regex(pattern, limit?, offset?): 正则搜字符串(忽略大小写)
+  - find_bytes(patterns, limit?, offset?): 字节模式搜索,?? 通配
+  - search_text(pattern, regex?, case_sensitive?, limit?, start?, end?, include?, code_only?): 反汇编文本搜索(字面/正则,只扫代码段)
+  - list_funcs(queries) / lookup_funcs(queries) / func_query(queries): 函数清单(filter 通配/正则+分页)/按地址名字定位/富查询
+  - imports(offset, count) / imports_query(queries) / entity_query(queries): 导入表分页/导入富查询/IDB 实体(functions/globals/imports/strings/names)
+  - server_health(): 探活:MCP 连接与当前 IDB 状态
+  - list_ops(): 列 IDA 端实际启用的操作清单(版本漂移自查)
+  - py_eval(code): IDA 进程内跑 Python(万能兜底)。无 stdin、只能 print;读数据用
+    ida_bytes.get_dword/get_byte 等,别把工具结果手抄进代码
+  【改·写操作】改的是 IDB;rename 带 dry_run 可先预览
+  - rename(batch): 批量改名:函数/全局/局部/栈变量
+  - set_comments(items) / append_comments(items, 同文去重): 设/追加注释(两视图同步)
+  - patch(patches, hex) / patch_asm(items): 写字节/汇编补丁
+  - put_int(items): 写整数到内存
+  - declare_stack(items) / delete_stack(items): 创建/删除栈变量
+  - declare_type(decls) / set_type(edits) / type_apply_batch(batch): 声明 C 类型/应用类型(函数签名/全局/局部/栈)/批量
+  - set_op_type(items): 设指令操作数类型(结构体偏移/offset/格式)
+  - make_data(items): 建类型化数据符号(硬化符号边界)
+  - enum_upsert(queries): 创建/扩展枚举(幂等)
+  - infer_types(addrs): 在地址处推断并应用类型
+  - diff_before_after(addr, action, action_args): 改名/改类型前后对照
+  - define_func(items) / define_code(items) / undefine(items): 定义函数/代码/转回原始字节
+  - add_bookmark(addr, name, prefix?): 加书签
+  - force_recompile(items?): 强制重编译伪代码(改类型后 Hex-Rays 缓存不刷新)
+  - idb_save(path?): 保存 IDB(可另存路径)
+  【不常用】
+  - analyze_batch(queries) / analyze_component(addrs) / analyze_function(addr, include_asm?): 批量/组件/单函数紧凑全量分析
+  - basic_blocks(addrs, max_blocks?, offset?) / callees(addrs, limit?) / callgraph(roots, max_depth?...): CFG 块/被调清单/有界调用图
+  - export_funcs(addrs, format?): 导出函数为 json/C 头/原型
+  - find_xref_signatures(addrs, format?, top?, max_length?) / make_signature(addrs, format?...) /
+    make_signature_for_function(addrs, ...) / make_signature_for_range(start, end, ...): 特征码四件套
+  - func_profile(queries): 函数画像:调用者/被调/字符串/常量
+  - insn_query(queries): 指令级查询:助记符/操作数过滤
+  - int_convert(inputs): 进制换算:hex/dec/bin/ascii
+  - list_globals(queries) / stack_frame(addrs) / read_struct(queries) / search_structs(filter): 全局清单/栈帧/结构体读/搜结构体
+  - trace_data_flow(addr, direction?, max_depth?): 数据流多跳追踪:forward=流向/backward=来源
+  - type_inspect(queries) / type_query(queries): 类型检查/类型目录
+  - xrefs_to_field(queries): 查结构体某字段的引用
+  - py_exec_file(file_path): IDA 进程内跑脚本文件。无 stdin、只能 print
+example: {op: survey_binary, params: {}}
+schema:
+  type: object
+  required: [op]
+  properties:
+    op:
+      type: string
+      enum: [survey_binary, decompile, disasm, xrefs_to, xref_query, get_bytes,
+        get_string, get_int, get_global_value, find, find_regex, find_bytes,
+        search_text, list_funcs, lookup_funcs, func_query, imports, imports_query,
+        entity_query, py_eval, server_health, list_ops, rename, set_comments,
+        append_comments, patch, patch_asm, put_int, declare_stack, delete_stack,
+        declare_type, set_type, set_op_type, make_data, enum_upsert, infer_types,
+        diff_before_after, define_func, define_code, undefine, add_bookmark,
+        force_recompile, type_apply_batch, idb_save, analyze_batch,
+        analyze_component, analyze_function, basic_blocks, callees, callgraph,
+        export_funcs, find_xref_signatures, func_profile, insn_query, int_convert,
+        list_globals, make_signature, make_signature_for_function,
+        make_signature_for_range, py_exec_file, read_struct, search_structs,
+        stack_frame, trace_data_flow, type_inspect, type_query, xrefs_to_field]
+      description: 操作名(常用只读在前),各操作参数见 usage 分组表
+    params:
+      type: object
+      description: '各 op 的参数,如 survey_binary {} · decompile {addr} · xrefs_to {addrs: []} · find {type, targets} · rename {batch} · py_eval {code}'
+  additionalProperties: false

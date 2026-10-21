@@ -1,0 +1,32 @@
+name: commix
+description: 命令注入自动化利用
+category: web
+danger: intrusive
+timeout: 900
+requires: []
+keywords: [commix, 命令注入, command injection, os命令, rce, exec, system, 盲注, 反引号, 管道符]
+search_text: 自动检测并利用 OS 命令注入（布尔/时间盲注、直接回显、OOB），支持各种绕过变体
+  （编码/空格绕过/分隔符）。疑似命令注入点（如 ping 参数）验证与利用用。venv pip 装，非交互 --batch。
+example: {url: "http://target/ping.php?ip=127.0.0.1"}
+schema:
+  type: object
+  properties:
+    url:
+      type: string
+      description: 目标 URL（含可疑参数），以 http(s):// 开头
+    data:
+      type: string
+      description: 'POST body，如 "ip=127.0.0.1"'
+    cookie:
+      type: string
+      description: 请求 Cookie
+    level:
+      type: integer
+      minimum: 1
+      maximum: 3
+      description: 探测级别（越高越全越慢）
+    technique:
+      type: string
+      enum: [t, b, e, tb, te, be, tbe]
+      description: 注入手法 t时间盲/b布尔/e回显，组合如 tbe
+  required: [url]
