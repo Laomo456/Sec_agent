@@ -85,7 +85,7 @@ node_modules、构建缓存均已清除,不含任何凭据。
 
 **待办**:
 
-- [x] 补 `LICENSE`(已选 MIT;版权行 "AGG Authors" 为占位,上传前替换为真实 ID)
+- [x] 补 `LICENSE`(MIT,Copyright Laomo456)
 - [x] 根 `.gitignore`(venv / 运行时数据 / `external/` / *.zip / 构建产物)
 - [x] 社区文档:CONTRIBUTING(含 Conventional Commits 提交规范)、
       CHANGELOG、SECURITY、.editorconfig
